@@ -1,30 +1,43 @@
-//!#region Global Properties
+// Function to call API based on URL
+async function FetchData(url) {
+    try {
+        // Make an API request
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Parse response as JSON
+        const data = await response.json();
+        // Return the data
+        return data; 
+    } catch (error) {
+        // Return null if there's an error
+        console.error('Error fetching data:', error);
+        return null;
+    }
+}
 
-//!#endregion
-
-
-//#region Fetch and Display Works Data
-
-async function GenerateArticles() {
-    
-    // Fetch data from API/Works
-    const reponse = await fetch("http://localhost:5678/api/works");
-    const projetsData = await reponse.json();
+/** Function that handles construction of html elements of the gallery based on input (data);
+ * @param {Object} data - The data you want to be generated within the gallery either fetched from the API or from a sorted Set.
+ */
+function GenerateFigureElements(data) {
     
     // Get Gallery Element
     const gallery = document.querySelector(".gallery");
+    // Clear the gallery before inputing anything
+    gallery.innerHTML = "";
     
     // Create HTML Elements
-    for ( let i = 0; i < projetsData.length; i++ ) {
+    for ( let i = 0; i < data.length; i++ ) {
         // Create HTML Figure
         const figureElement = document.createElement("figure");
         // Create HTML Img and get url
         const imageElement = document.createElement("img");
-        imageElement.src = projetsData[i].imageUrl;
+        imageElement.src = data[i].imageUrl;
         
         // Create HTML Caption and get data
         const captionElement = document.createElement("figcaption");
-        captionElement.innerHTML = projetsData[i].title;
+        captionElement.innerHTML = data[i].title;
         
         // Append img and caption elements to each figure
         figureElement.appendChild(imageElement);
@@ -35,15 +48,11 @@ async function GenerateArticles() {
     }
     
 }
-//#endregion
 
-//#region Generate Filters
-
-//TODO: Build function to display works based on selected category DONT FORGET to keep back to default category.
-async function GenerateFilterButtons() {
-    // Fetch data from API
-    const reponse = await fetch("http://localhost:5678/api/categories");
-    const categories = await reponse.json();
+/**  Generate Filter buttons based on categories fetched from API and a default one to reset filtering
+ * @param {Object} data - The data needed to generate the buttons based on the categories stored in the API
+ */
+function GenerateFilterButtons(data) {
     
     // Get Filters Div
     const filters = document.querySelector(".filters");
@@ -54,22 +63,109 @@ async function GenerateFilterButtons() {
     filters.appendChild(filterDiv);
 
     // Create Filter Buttons + 1 Default
-    for (let i = 0; i < categories.length + 1; i++) {
-        console.log("in");
+    for (let i = 0; i < data.length + 1; i++) {
         const filterElement = document.createElement("button");
-            if (i < categories.length) {
-                filterElement.innerHTML = categories[i].name;
+            if (i < data.length) {
+                filterElement.innerHTML = data[i].name;
+                filterElement.classList.add("filter-button");
+                filterElement.setAttribute("id", `button-${data[i].id}`);
             }
             else {
-                filterElement.innerHTML = "Default";
+                filterElement.innerHTML = "Tous";
+                filterElement.classList.add("filter-button");
+                filterElement.setAttribute("id", "button-default");
             }
         filterDiv.appendChild(filterElement);
     }
+
+
+
 }
 
-//#endregion
+/**  Function to create a set from input data as an array and sorts it based on a category as string. Returns a new Set that can be used in other functions.
+ * @param {Object} data -  the data you want to sort.
+ * @param {String} category - the category you want the data to be sorted by (as a string)
+ * @returns the sorted data as a new Set.
+*/
+function SortbyFilter(data, category) {
+    let newSet = new Set();
+    data.forEach(item => {
+        if(item.category.name == category){
+            newSet.add(item);  
+        }
+    });
+    return newSet;
+}
+/** This function loops through all the buttons found within the filter section and maps them based on the categories fetched from the API. 
+ *  Then for each button we assign them an eventListener function which creates a specific set based on the works fetched from the API and filters them into a set based on the category the button is named from.
+ *  To finish the set in converted back to an array and we call the GenerateFigureElements function. 
+ *  I have no idea how my brain managed to pull that off and it would have been easier to just create a new Array from baseData and filter it through categories but hey it works plus it is e
+ * @param {Object} catData - the Categories fetched from the API. Needed to loop through the buttons and find their id based on each category.
+ * @param {Object} baseData - the array of works needed to create sets and convert them or restore the filtering back to default.
+ */
+function addFilterButtonsEventListeners(catData, baseData) {
 
-//#region Methods
-GenerateFilterButtons();
-GenerateArticles();
-//#endregion
+    const buttons = document.querySelectorAll(".filter-button")
+    let activeButton = null;
+    /**Function that handles the active state of buttons and allow the gallery to return to a default state when either clicked on default button or a filter button is deactivated.
+     * 
+     */
+    function deactivateAllButtons() {
+        buttons.forEach(button => {
+          button.classList.remove("active");
+        });
+        activeButton = null;
+      }
+
+    for (let i = 0; i < catData.length + 1 ; i++) {
+        if (i < catData.length) {
+            const button = document.getElementById(`button-${catData[i].id}`);
+            button.addEventListener("click", function() {
+                if (button === activeButton){
+                   deactivateAllButtons();
+                   GenerateFigureElements(baseData);
+                }
+                else {
+                    deactivateAllButtons();
+                    button.classList.add("active");
+                    activeButton = button;
+                    const sortedSet = SortbyFilter(baseData, baseData[i].category.name);
+                    const sortedArray = Array.from(sortedSet);
+                    GenerateFigureElements(sortedArray);
+                }
+            });
+        }
+        else {
+            const button = document.getElementById("button-default");
+            button.addEventListener("click", function () {
+                if (button === activeButton) {
+                    deactivateAllButtons();
+                    GenerateFigureElements(baseData);
+                }
+                else {
+                    deactivateAllButtons();
+                    button.classList.add("active");
+                    activeButton = button;
+                    GenerateFigureElements(baseData);
+                }
+            });
+        }
+    }
+}
+
+// Function that handles calls of methods and steps 
+async function Initialize(){
+    const worksUrl = "http://localhost:5678/api/works";
+    const categoriesUrl = "http://localhost:5678/api/categories";
+    
+    const worksData = await FetchData(worksUrl);
+    const categoriesData = await FetchData(categoriesUrl);
+
+    GenerateFilterButtons(categoriesData);
+    GenerateFigureElements(worksData);
+    addFilterButtonsEventListeners(categoriesData, worksData);
+}
+
+
+//! Start
+Initialize();
