@@ -62,8 +62,16 @@ function GenerateFilterButtons(data) {
     filterDiv.className = "filter-section";
     filters.appendChild(filterDiv);
 
-    // Create Filter Buttons + 1 Default
-    for (let i = 0; i < data.length + 1; i++) {
+    // Create Default button
+    const defaultButton = document.createElement("button");
+    defaultButton.innerHTML = "Tous";
+    defaultButton.classList.add("filter-button");
+    defaultButton.classList.add("active");
+    defaultButton.setAttribute("id", "button-default");
+    filterDiv.appendChild(defaultButton);
+
+    // Create Categories Filter Buttons
+    for (let i = 0; i < data.length; i++) {
         const filterElement = document.createElement("button");
             if (i < data.length) {
                 filterElement.innerHTML = data[i].name;
@@ -71,15 +79,10 @@ function GenerateFilterButtons(data) {
                 filterElement.setAttribute("id", `button-${data[i].id}`);
             }
             else {
-                filterElement.innerHTML = "Tous";
-                filterElement.classList.add("filter-button");
-                filterElement.setAttribute("id", "button-default");
+                throw new Error(error);
             }
         filterDiv.appendChild(filterElement);
     }
-
-
-
 }
 
 /**  Function to create a set from input data as an array and sorts it based on a category as string. Returns a new Set that can be used in other functions.
@@ -135,6 +138,7 @@ function addFilterButtonsEventListeners(catData, baseData) {
                 }
             });
         }
+        //Handle the default button behaviour
         else {
             const button = document.getElementById("button-default");
             button.addEventListener("click", function () {
