@@ -1,3 +1,6 @@
+//* Global Properties *//
+const globalUrl = "http://localhost:5678/api"
+
 // Function to call API based on URL
 async function FetchData(url) {
     try {
@@ -102,18 +105,17 @@ function SortbyFilter(data, category) {
 /** This function loops through all the buttons found within the filter section and maps them based on the categories fetched from the API. 
  *  Then for each button we assign them an eventListener function which creates a specific set based on the works fetched from the API and filters them into a set based on the category the button is named from.
  *  To finish the set in converted back to an array and we call the GenerateFigureElements function. 
- *  I have no idea how my brain managed to pull that off and it would have been easier to just create a new Array from baseData and filter it through categories but hey it works plus it is e
  * @param {Object} catData - the Categories fetched from the API. Needed to loop through the buttons and find their id based on each category.
  * @param {Object} baseData - the array of works needed to create sets and convert them or restore the filtering back to default.
  */
-function addFilterButtonsEventListeners(catData, baseData) {
+function AddFilterButtonsEventListeners(catData, baseData) {
 
     const buttons = document.querySelectorAll(".filter-button")
     let activeButton = null;
     /**Function that handles the active state of buttons and allow the gallery to return to a default state when either clicked on default button or a filter button is deactivated.
      * 
      */
-    function deactivateAllButtons() {
+    function DeactivateAllButtons() {
         buttons.forEach(button => {
           button.classList.remove("active");
         });
@@ -121,15 +123,18 @@ function addFilterButtonsEventListeners(catData, baseData) {
       }
 
     for (let i = 0; i < catData.length + 1 ; i++) {
+        // Loops through all categories to find each corresponding button and assign it the EventListener
         if (i < catData.length) {
             const button = document.getElementById(`button-${catData[i].id}`);
             button.addEventListener("click", function() {
+                // Check if button is already active or not
                 if (button === activeButton){
-                   deactivateAllButtons();
+                   DeactivateAllButtons();
                    GenerateFigureElements(baseData);
                 }
+                // if clicked and not already active, activates the button
                 else {
-                    deactivateAllButtons();
+                    DeactivateAllButtons();
                     button.classList.add("active");
                     activeButton = button;
                     const sortedSet = SortbyFilter(baseData, baseData[i].category.name);
@@ -143,11 +148,11 @@ function addFilterButtonsEventListeners(catData, baseData) {
             const button = document.getElementById("button-default");
             button.addEventListener("click", function () {
                 if (button === activeButton) {
-                    deactivateAllButtons();
+                    DeactivateAllButtons();
                     GenerateFigureElements(baseData);
                 }
                 else {
-                    deactivateAllButtons();
+                    DeactivateAllButtons();
                     button.classList.add("active");
                     activeButton = button;
                     GenerateFigureElements(baseData);
@@ -156,18 +161,17 @@ function addFilterButtonsEventListeners(catData, baseData) {
         }
     }
 }
-
-// Function that handles calls of methods and steps 
+// 
 async function Initialize(){
-    const worksUrl = "http://localhost:5678/api/works";
-    const categoriesUrl = "http://localhost:5678/api/categories";
+    const worksUrl = `${globalUrl}/works`;
+    const categoriesUrl = `${globalUrl}/categories`;
     
     const worksData = await FetchData(worksUrl);
     const categoriesData = await FetchData(categoriesUrl);
 
     GenerateFilterButtons(categoriesData);
     GenerateFigureElements(worksData);
-    addFilterButtonsEventListeners(categoriesData, worksData);
+    AddFilterButtonsEventListeners(categoriesData, worksData);
 }
 
 
