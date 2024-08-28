@@ -9,8 +9,8 @@
 	<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Work+Sans&display=swap" rel="stylesheet">
     <!-- CSS -->
     <link rel="stylesheet" href="./assets/style.css">
-    <link rel="stylesheet" href="./assets/login.css">
     <!-- JS -->
+     <script src="./js/login.js" defer></script>
 </head>
 <body>
     <header>
@@ -27,12 +27,15 @@
     <main>
         <section class="login-section">
             <h2>Log in</h2>
-            <form action="#" method="post">
+            <form id="login-form">
                 <label for="email-input">E-mail</label>
                 <input type="text" name="email-input" id="email-input" required>
+                <p class="error-message" id="email-error"></p>
                 <label for="password-input">Mot de passe</label>
                 <input type="password" name="password-input" id="password-input" required>
+                <p class="error-message" id="password-error"></p>
                 <input type="submit" id="submit-button" value="Se connecter">
+                <p class="error-message" id="submit-error"></p>
                 <a href="">Mot de passe oublié ?</a>
             </form>
         </section>
