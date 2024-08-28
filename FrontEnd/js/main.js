@@ -1,6 +1,11 @@
 //* Global Properties *//
 const globalUrl = "http://localhost:5678/api"
 
+let IsAdmin = false;
+let logoutTimer;
+const logoutTime = 10;
+
+//****** FETCH *******/
 // Function to call API based on URL
 async function FetchData(url) {
     try {
@@ -19,12 +24,48 @@ async function FetchData(url) {
         return null;
     }
 }
+// Function to send token to API when need for Administrator status
+function FetchAuthentication() {
+    try{
+        const loginPostUrl = globalUrl + "/users/login";
+        const token = localStorage.getItem("token");
+        console.log(token);
+        if(token == null){
+            throw new Error("Error while trying to retrieve authentication token ")
+        }
+        fetch(loginPostUrl, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => {
+            if(!response.ok){
+                throw new Error("Error while trying to retrieve response from API");
+            }
+            console.log("token" + response);
+            return response.json()
+        })
+        .catch(error => {
+            console.error(error)
+        });
+    }
+    catch(error){
+        console.log(error);
+    }
+}
 
+//****** GALLERY *******/
 /** Function that handles construction of html elements of the gallery based on input (data);
  * @param {Object} data - The data you want to be generated within the gallery either fetched from the API or from a sorted Set.
  */
 function GenerateFigureElements(data) {
     try{
+
+        if(data == null){
+            throw new Error("Error while trying to handle data input")
+        }
+
         // Get Gallery Element
         const gallery = document.querySelector(".gallery");
         // Clear the gallery before inputing anything
@@ -60,6 +101,11 @@ function GenerateFigureElements(data) {
  */
 function GenerateFilterButtons(data) {
     try{
+        // Error Management
+        if(data == null){
+            throw new Error("Error while trying to handle data input")
+        }
+
         // Get Filters Div
         const filters = document.querySelector(".filters");
     
@@ -96,15 +142,24 @@ function GenerateFilterButtons(data) {
  * @param {String} category - the category you want the data to be sorted by (as a string)
  * @returns the sorted data as a new Set.
 */
-function SortbyFilter(data, category) {
+function SortbyCategory(data, category) {
     try{
+        // Error management
+        if(data == null){
+            throw new Error("Error: Cannot retrieve data")
+        }
+        if(category == null){
+            throw new Error("Error: Cannot retrieve categories")
+        }
+
         let newSet = new Set();
         data.forEach(item => {
             if(item.category.name == category){
                 newSet.add(item);  
             }
         });
-        return newSet;
+        const newArray = Array.from(newSet);
+        return newArray;
     }
     catch(error){
         console.error(error);
@@ -144,9 +199,7 @@ function AddFilterButtonsEventListeners(catData, baseData) {
                         DeactivateAllButtons();
                         button.classList.add("active");
                         activeButton = button;
-                        const sortedSet = SortbyFilter(baseData, baseData[i].category.name);
-                        const sortedArray = Array.from(sortedSet);
-                        GenerateFigureElements(sortedArray);
+                        GenerateFigureElements(SortbyCategory(baseData, baseData[i].category.name));
                     }
                 });
             }
@@ -173,15 +226,106 @@ function AddFilterButtonsEventListeners(catData, baseData) {
     }
 }
 
+//****** ADMIN *******/
+
+// Handle Automatic logout 
+function StartLogoutTimer() {
+    if(IsAdmin){
+        // Abort former timer
+        clearTimeout(logoutTimer);
+        //Start timer 
+        logoutTimer = setTimeout(() => {    
+            // Display an alert to prompt for imminent logout
+            const confirmation = confirm("Votre session va expirer dans 1 minute. Souhaitez-vous rester connecté ?");
+    
+            if (!confirmation) {
+                HandleLogout();
+            }
+            else {
+                //Restart the timer on confirm
+                StartLogoutTimer();
+            }
+          }, (logoutTime - 1) * 60 * 1000); // Starts the alert 1 minute before timeout
+    } else {
+        return;
+    }
+    }
+
+// Check for Admin Status
+function CheckForAdmin(){
+    try{
+        const token = sessionStorage.getItem("token");
+        if(token != null){
+            IsAdmin = true;
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+// HandleAdminChanges
+function HandleAdminChanges(){
+    try{
+        if(IsAdmin){
+            const loginNav = document.getElementById("login-nav");
+
+            // Change login nav
+            loginNav.classList.add("active");
+            loginNav.innerHTML = "logout"
+            // Handle redirection back to projects !IsAdmin
+            loginNav.addEventListener("click", (event) => {
+                // Make sure the user goes back to home page
+                loginNav.href = "index.html";
+                //
+                HandleLogout();
+            })
+        }
+        else{
+            const projetsNav = document.getElementById("projets-nav");
+
+            // Change projets' class
+            projetsNav.classList.add("active");
+            return;
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Handle Logout Behaviour
+function HandleLogout(){
+    IsAdmin = false;
+    //Clear sessionToken
+    sessionStorage.removeItem("token");
+    // Clear login Timer
+    // clearTimeout(logoutTimer);
+    //Reload page
+    location.reload();
+}
+
 //* Initialize function
 async function Initialize(){
     try{
+        // Get data from API
         const worksUrl = `${globalUrl}/works`;
         const categoriesUrl = `${globalUrl}/categories`;
         
         const worksData = await FetchData(worksUrl);
         const categoriesData = await FetchData(categoriesUrl);
-    
+
+        // Check for Admin status (logged in and token present in storage)
+        CheckForAdmin();
+        //Start automatic logout if Admin or simply returns if not
+        StartLogoutTimer();
+
+        // Normally there should be something that checks if you're still admin every second for security reasons I believe
+        setInterval(CheckForAdmin, 1000);
+
+        // If Admin handle the main page modifications // Perhaps should just build a index-admin page
+        HandleAdminChanges();
+
+        // Handle normal gallery behaviour regardless of Admin status
         GenerateFilterButtons(categoriesData);
         GenerateFigureElements(worksData);
         AddFilterButtonsEventListeners(categoriesData, worksData);

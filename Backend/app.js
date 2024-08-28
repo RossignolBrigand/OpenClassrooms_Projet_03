@@ -11,7 +11,7 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(helmet({
-      crossOriginResourcePolicy: false,
+      crossOriginResourcePolicy: true,
     }));
 app.use('/images', express.static(path.join(__dirname, 'images')))
 

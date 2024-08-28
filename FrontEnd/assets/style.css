@@ -281,6 +281,12 @@ footer nav ul {
     text-align: center;
 }
 
+#error-message {
+	margin-top: 1em;
+	font-size: 1em;
+	color: #1D6154;
+}
+
 input[type="submit"]{
 	font-family: 'Syne';
 	font-weight: 700;

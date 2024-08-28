@@ -12,14 +12,12 @@ const passwordInput = document.getElementById("password-input");
 
 const loginForm = document.getElementById("login-form");
 
-// Create RegEx and Validation rules
+// Create RegEx
 const emailRegEx = new RegExp("[a-z0-9._-]+@[a-z0-9._-]+\.[a-z0-9._-]+");
-const emailValidation = "sophie.bluel@test.tld";
-const passwordValidation = "S0phie";
 
-// Handle display of error message on page
+// Handle display of error message on login page
 function DisplayErrorMessage(message){
-    const errorMessage = document.getElementById("email-error");
+    const errorMessage = document.getElementById("error-message");
     errorMessage.innerHTML = message;
     return errorMessage;
 }
@@ -34,6 +32,7 @@ function AddRegexListener(){
         }
     })
 }
+
 //* Handle Form Submission
 function AddFormSubmissionListener() {
     loginForm.addEventListener("submit", function (event) {
@@ -45,44 +44,39 @@ function AddFormSubmissionListener() {
         const password = passwordInput.value;
         //Reset errorMessage.innerHtml
         DisplayErrorMessage("");
-
-        if (email != emailValidation || password != passwordValidation) {
-            DisplayErrorMessage("Une erreur est survenue, le mot de passe et/ou l'e-mail est erroné");
-            return;
-        }
-
         // Create Package to send to API
         const loginData = {
             "email": email,
             "password": password
         };
         console.log(loginData);
-
         // Send package to API
         fetch(loginPostUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(loginData)
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Network response failed:" + response.statusText);
-                }
-                console.log(response);
-                return response.json();
-            })
-            .then(data => {
-                const token = data.token;
-                localStorage.setItem("token", token);
-            })
-            .catch(error => {
-                console.warn(error);
-            });
+        // Handle API response
+        .then(response => {
+            if (!response.ok) {
+                DisplayErrorMessage("Une erreur est survenue, vérifiez votre e-mail/mot de passe.");
+                return;
+            }
+            return response.json();
+        })
+        // Create Authentication Token
+        .then(data => {
+            const token = data.token;
+            sessionStorage.setItem("token", token);
+            window.location.href = "index.html"
+            return token;
+        })
+        .catch(error => {
+            console.warn(error);
+        });
     });
 }
 
-
-// If correct redirect to home page, if incorrect display error message and stay on login page.
 //*Initialize
 function Initialize() {
     DisplayErrorMessage("");

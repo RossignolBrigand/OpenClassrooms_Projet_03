@@ -2,25 +2,27 @@
  * This modules handles all the authentication token related logic like the login/logout behaviour and IsLoggedIn bool
  */
 
+//Variables
+
+let IsLoggedIn = false;
 
 // Check For Token
-function CheckForToken() {
-    const token = localStorage.getItem("token");
-    console.log(token);
-    fetch(loginPostUrl, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+function CheckToken(){
+    try{
+        const token = sessionStorage.getItem("token");
+        if(token === null){
+            console.log("Vous n'êtes pas connecté(e)");
+            IsLoggedIn = false;
         }
-    })
-    .then(response => {
-        if(!response.ok){
-            throw new Error("Error while trying to retrieve response from API");
+        else {
+            console.log("Vous êtes connecté(e)");
+            IsLoggedIn = true;
         }
-        console.log("token" + response);
-        return response.json()
-    })
-    .catch(error => {
-        console.error(error)
-    });
+        return IsLoggedIn;
+    }
+    catch(error){
+        console.log(error);
+    }
 }
+
+CheckToken();
