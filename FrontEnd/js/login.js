@@ -33,7 +33,7 @@ function AddRegexListener(){
     })
 }
 
-//* Handle Form Submission
+//* Handle Login Form Submission
 function AddFormSubmissionListener() {
     loginForm.addEventListener("submit", function (event) {
 

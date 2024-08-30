@@ -1,9 +1,15 @@
 //* Global Properties *//
 const globalUrl = "http://localhost:5678/api"
 
+// Admin properties
 let IsAdmin = false;
 let logoutTimer;
-const logoutTime = 10;
+const logoutTime = 10; // How much time you want the session to be
+
+// Modal properties
+
+let IsModalOpen = false; 
+
 
 //****** FETCH *******/
 // Function to call API based on URL
@@ -61,11 +67,9 @@ function FetchAuthentication() {
  */
 function GenerateFigureElements(data) {
     try{
-
         if(data == null){
             throw new Error("Error while trying to handle data input")
         }
-
         // Get Gallery Element
         const gallery = document.querySelector(".gallery");
         // Clear the gallery before inputing anything
@@ -140,7 +144,7 @@ function GenerateFilterButtons(data) {
 /**  Function to create a set from input data as an array and sorts it based on a category as string. Returns a new Set that can be used in other functions.
  * @param {Object} data -  the data you want to sort.
  * @param {String} category - the category you want the data to be sorted by (as a string)
- * @returns the sorted data as a new Set.
+ * @returns the sorted data as a new Array.
 */
 function SortbyCategory(data, category) {
     try{
@@ -166,12 +170,7 @@ function SortbyCategory(data, category) {
     }
 }
 
-/** This function loops through all the buttons found within the filter section and maps them based on the categories fetched from the API. 
- *  Then for each button we assign them an eventListener function which creates a specific set based on the works fetched from the API and filters them into a set based on the category the button is named from.
- *  To finish the set in converted back to an array and we call the GenerateFigureElements function. 
- * @param {Object} catData - the Categories fetched from the API. Needed to loop through the buttons and find their id based on each category.
- * @param {Object} baseData - the array of works needed to create sets and convert them or restore the filtering back to default.
- */
+// Handle Category buttons logic
 function AddFilterButtonsEventListeners(catData, baseData) {
     try{
         const buttons = document.querySelectorAll(".filter-button")
@@ -226,7 +225,7 @@ function AddFilterButtonsEventListeners(catData, baseData) {
     }
 }
 
-//****** ADMIN *******/
+//****** ADMIN-MODE *******/
 
 // Handle Automatic logout 
 function StartLogoutTimer() {
@@ -236,17 +235,18 @@ function StartLogoutTimer() {
         //Start timer 
         logoutTimer = setTimeout(() => {    
             // Display an alert to prompt for imminent logout
-            const confirmation = confirm("Votre session va expirer dans 1 minute. Souhaitez-vous rester connecté ?");
+            const confirmation = confirm("Votre session va expirer dans 1 minute. Souhaitez-vous rester connecté(e) ?");
     
-            if (!confirmation) {
-                HandleLogout();
-            }
-            else {
+            if (confirmation.ok) {
                 //Restart the timer on confirm
                 StartLogoutTimer();
             }
+            else {
+                HandleLogout();
+            }
           }, (logoutTime - 1) * 60 * 1000); // Starts the alert 1 minute before timeout
-    } else {
+    } 
+    else {
         return;
     }
     }
@@ -266,27 +266,63 @@ function CheckForAdmin(){
 // HandleAdminChanges
 function HandleAdminChanges(){
     try{
+        //Check for Admin status and modifies the page accordingly
         if(IsAdmin){
             const loginNav = document.getElementById("login-nav");
+            const portfolioTitleDiv =document.querySelector(".title-div");
 
             // Change login nav
             loginNav.classList.add("active");
             loginNav.innerHTML = "logout"
-            // Handle redirection back to projects !IsAdmin
             loginNav.addEventListener("click", (event) => {
                 // Make sure the user goes back to home page
                 loginNav.href = "index.html";
-                //
+                // Handle redirection back to projects !IsAdmin
                 HandleLogout();
             })
+            // Generate Admin Mode (top bar + button)
+            HandleEditionMode();
+            portfolioTitleDiv.style.marginBottom = "60px"; // Add more whitespace if filter buttons are not present.
         }
-        else{
-            const projetsNav = document.getElementById("projets-nav");
+    }
+    catch(error){
+        console.log(error);
+    }
+}
 
-            // Change projets' class
-            projetsNav.classList.add("active");
-            return;
-        }
+function HandleEditionMode(){
+    try{
+        // Edition Top bar
+        const topBarContainer = document.createElement("div");
+        const modifyButton = document.createElement("a");
+        const modifyIcon = document.createElement("i") // Create element for fa icon
+
+        topBarContainer.classList.add("topbar-container");
+        modifyButton.classList.add("admin-modal");
+        modifyButton.href = "#modal1"; // Sets the link for the modale
+        modifyButton.innerHTML = "Mode Édition";
+
+        modifyIcon.classList.add("fa-solid","fa-pen-to-square");
+        modifyIcon.style.marginRight = "5px";
+        // Append components
+        modifyButton.prepend(modifyIcon);
+        topBarContainer.appendChild(modifyButton);
+        document.body.insertBefore(topBarContainer, document.body.firstChild); // Insert div at the very top of the body
+
+        // "Modifier" button
+        const titleDiv = document.querySelector(".title-div");
+
+        const modalButton = document.createElement("a");
+        modalButton.classList.add("admin-modal");
+        modalButton.href = "#modal1";
+        modalButton.innerHTML = "Modifier";
+
+        const modalIcon = document.createElement("i");
+        modalIcon.classList.add("fa-solid","fa-pen-to-square");
+        modalIcon.style.marginRight = "5px";
+        // Append Components
+        titleDiv.appendChild(modalButton);
+        modalButton.prepend(modalIcon);
     }
     catch(error){
         console.log(error);
@@ -299,12 +335,158 @@ function HandleLogout(){
     //Clear sessionToken
     sessionStorage.removeItem("token");
     // Clear login Timer
-    // clearTimeout(logoutTimer);
-    //Reload page
-    location.reload();
+    clearTimeout(logoutTimer);
+    //Reset page
+    //TODO Not working for the moment
+    Initialize();
 }
 
-//* Initialize function
+//** MODAL  **//
+
+// Ge
+function GenerateModal(){
+    try{
+        const globalUrl = "http://localhost:5678/api";
+        const worksUrl = globalUrl + "/works";
+        // Generate the modal container
+        function GenerateModalContainer(){
+            // modal background
+            const modalContainer = document.createElement("aside"); 
+            modalContainer.classList.add("modal");
+            modalContainer.setAttribute("id", "modal1");
+            modalContainer.setAttribute("style", "display:none");
+            modalContainer.setAttribute("aria-hidden", "true");
+            modalContainer.setAttribute("role", "dialog");
+            // modal container
+            const modalWrapper = document.createElement("div"); 
+            modalWrapper.classList.add("modal-wrapper");
+            // modal buttons div
+            const modalButtons = document.createElement("div");
+            modalButtons.classList.add("modal-buttons")
+            // back modal button
+            const backModalButton = document.createElement("button");
+            const backIcon = document.createElement("i");
+            backIcon.setAttribute("id", "back-button");
+            backIcon.classList.add("fa-solid", "fa-arrow-left");
+            backModalButton.appendChild(backIcon); // add icon within button
+            // modal close button
+            const closeModalButton = document.createElement("button"); 
+            closeModalButton.classList.add("admin-modal");
+            const closeIcon = document.createElement("i");
+            closeIcon.classList.add("fa-solid", "fa-x");
+            closeModalButton.appendChild(closeIcon); // add icon within button
+
+            // Append everything
+            modalButtons.appendChild(backModalButton);
+            modalButtons.appendChild(closeModalButton);
+            modalWrapper.appendChild(modalButtons);
+            modalContainer.appendChild(modalWrapper);
+            document.body.appendChild(modalContainer);
+        }
+        // Generate the work are of the modal
+        function GenerateModalGalleryArea(){
+            try{
+                const modalWrapper = document.querySelector(".modal-wrapper");
+                // create workarea div
+                const modalWorkArea = document.createElement("section");
+                modalWorkArea.classList.add("modal-workarea")
+                //modal title
+                const modalTitle = document.createElement("h2");
+                modalTitle.classList.add("modal-title");
+                modalTitle.innerHTML = "Title";
+                // modal gallery
+                const modalGallery = document.createElement("div");
+                modalGallery.classList.add("modal-gallery");
+                // line
+                const line = document.createElement("hr");
+                // Action button
+                const actionButton = document.createElement("button");
+                actionButton.classList.add("action-button");
+                actionButton.textContent = "Action";
+                // Append everything
+                modalWorkArea.appendChild(modalTitle);
+                modalWorkArea.appendChild(modalGallery);
+                modalWorkArea.appendChild(line);
+                modalWorkArea.appendChild(actionButton);
+                modalWrapper.appendChild(modalWorkArea);
+            }
+            catch(error){
+                console.log(error);
+            }
+        }
+        // Generate the modal gallery elements
+        function GenerateModalGalleryElements(){
+            try{
+                const modalGallery = document.querySelector(".modal-gallery");
+                fetch(worksUrl)
+                .then(response => {
+                    if(!response.ok){
+                        throw new Error("Error while trying to fetch data for the modal gallery")
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    data.forEach(element => {
+                        const figureElement = document.createElement("img");
+                        figureElement.classList.add("modal-figure");
+                        figureElement.src = element.imageUrl;
+                        modalGallery.appendChild(figureElement);
+                    })
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            }
+            catch(error){
+
+            }
+        }
+        GenerateModalContainer();
+        GenerateModalGalleryArea();
+        GenerateModalGalleryElements();
+    }
+    catch(error){
+        console.log("Error generating Modal:" + error.stack);
+    }
+}
+
+function AddModalEventListeners(){
+    try{
+        const adminButtons = document.querySelectorAll("button.admin-modal, a.admin-modal");
+        console.log(adminButtons);
+        adminButtons.forEach(item => {
+           item.addEventListener("click", (event) => {
+                try{
+                    DisplayModal();
+                }
+                catch(error){
+                    console.log(error);
+                }
+            })
+        });
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+function DisplayModal(){
+    try{
+        const modalContainer = document.getElementById("modal1");
+        if(IsModalOpen) {
+            modalContainer.style.display = "none";
+            IsModalOpen = false;
+        }
+        else if(!IsModalOpen){
+            modalContainer.style.display = "flex";
+            IsModalOpen = true;
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+//** INITIALIZE **//
 async function Initialize(){
     try{
         // Get data from API
@@ -319,16 +501,22 @@ async function Initialize(){
         //Start automatic logout if Admin or simply returns if not
         StartLogoutTimer();
 
-        // Normally there should be something that checks if you're still admin every second for security reasons I believe
-        setInterval(CheckForAdmin, 1000);
-
-        // If Admin handle the main page modifications // Perhaps should just build a index-admin page
-        HandleAdminChanges();
-
+        // If Admin handle the main page modifications if not display default page and generate category filters
+        if(IsAdmin){
+            HandleAdminChanges();
+            GenerateModal();
+            AddModalEventListeners()
+        }
+        if (!IsAdmin){
+            // Change projets' class
+            const projetsNav = document.getElementById("projets-nav");
+            projetsNav.classList.add("active");
+            // Generate categories buttons
+            GenerateFilterButtons(categoriesData);
+            AddFilterButtonsEventListeners(categoriesData, worksData);
+        }
         // Handle normal gallery behaviour regardless of Admin status
-        GenerateFilterButtons(categoriesData);
         GenerateFigureElements(worksData);
-        AddFilterButtonsEventListeners(categoriesData, worksData);
     }
     catch(error){
         console.error(error);
