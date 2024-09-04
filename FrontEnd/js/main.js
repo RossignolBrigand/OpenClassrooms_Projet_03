@@ -9,7 +9,7 @@ const logoutTime = 10; // How much time you want the session to be
 // Modal properties
 
 let IsModalOpen = false; 
-
+let modalPageId = 1;
 
 //****** FETCH *******/
 // Function to call API based on URL
@@ -346,18 +346,14 @@ function HandleLogout(){
 // Ge
 function GenerateModal(){
     try{
-        const globalUrl = "http://localhost:5678/api";
-        const worksUrl = globalUrl + "/works";
-        // Generate the modal container
-        function GenerateModalContainer(){
             // modal background
-            const modalContainer = document.createElement("aside"); 
-            modalContainer.classList.add("modal");
-            modalContainer.setAttribute("id", "modal1");
-            modalContainer.setAttribute("style", "display:none");
-            modalContainer.setAttribute("aria-hidden", "true");
-            modalContainer.setAttribute("role", "dialog");
-            // modal container
+            const modal = document.createElement("aside"); 
+            modal.classList.add("modal");
+            modal.setAttribute("id", "modal1");
+            modal.setAttribute("style", "display:none");
+            modal.setAttribute("aria-hidden", "true");
+            modal.setAttribute("role", "dialog");
+            // modal wrapper
             const modalWrapper = document.createElement("div"); 
             modalWrapper.classList.add("modal-wrapper");
             // modal buttons div
@@ -366,7 +362,7 @@ function GenerateModal(){
             // back modal button
             const backModalButton = document.createElement("button");
             const backIcon = document.createElement("i");
-            backIcon.setAttribute("id", "back-button");
+            backModalButton.classList.add("back-button");
             backIcon.classList.add("fa-solid", "fa-arrow-left");
             backModalButton.appendChild(backIcon); // add icon within button
             // modal close button
@@ -380,80 +376,139 @@ function GenerateModal(){
             modalButtons.appendChild(backModalButton);
             modalButtons.appendChild(closeModalButton);
             modalWrapper.appendChild(modalButtons);
-            modalContainer.appendChild(modalWrapper);
-            document.body.appendChild(modalContainer);
-        }
-        // Generate the work are of the modal
-        function GenerateModalGalleryArea(){
-            try{
-                const modalWrapper = document.querySelector(".modal-wrapper");
-                // create workarea div
-                const modalWorkArea = document.createElement("section");
-                modalWorkArea.classList.add("modal-workarea")
-                //modal title
-                const modalTitle = document.createElement("h2");
-                modalTitle.classList.add("modal-title");
-                modalTitle.innerHTML = "Title";
-                // modal gallery
-                const modalGallery = document.createElement("div");
-                modalGallery.classList.add("modal-gallery");
-                // line
-                const line = document.createElement("hr");
-                // Action button
-                const actionButton = document.createElement("button");
-                actionButton.classList.add("action-button");
-                actionButton.textContent = "Action";
-                // Append everything
-                modalWorkArea.appendChild(modalTitle);
-                modalWorkArea.appendChild(modalGallery);
-                modalWorkArea.appendChild(line);
-                modalWorkArea.appendChild(actionButton);
-                modalWrapper.appendChild(modalWorkArea);
-            }
-            catch(error){
-                console.log(error);
-            }
-        }
-        // Generate the modal gallery elements
-        function GenerateModalGalleryElements(){
-            try{
-                const modalGallery = document.querySelector(".modal-gallery");
-                fetch(worksUrl)
-                .then(response => {
-                    if(!response.ok){
-                        throw new Error("Error while trying to fetch data for the modal gallery")
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    data.forEach(element => {
-                        const figureElement = document.createElement("img");
-                        figureElement.classList.add("modal-figure");
-                        figureElement.src = element.imageUrl;
-                        modalGallery.appendChild(figureElement);
-                    })
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            }
-            catch(error){
+            modal.appendChild(modalWrapper);
+            document.body.appendChild(modal);
 
-            }
-        }
-        GenerateModalContainer();
-        GenerateModalGalleryArea();
-        GenerateModalGalleryElements();
+            // create modal inner container div
+            const modalContainer = document.createElement("section");
+            modalContainer.classList.add("modal-container")
+            //modal title
+            const modalTitle = document.createElement("h2");
+            modalTitle.classList.add("modal-title");
+            modalTitle.innerHTML = "Title";
+            // modal gallery
+            const modalWorkSpace = document.createElement("div");
+            modalWorkSpace.classList.add("modal-workspace");
+            // line
+            const line = document.createElement("hr");
+            // Action button
+            const actionButton = document.createElement("button");
+            actionButton.classList.add("action-button");
+            actionButton.textContent = "Action";
+            // Append everything
+            modalContainer.appendChild(modalTitle);
+            modalContainer.appendChild(modalWorkSpace);
+            modalContainer.appendChild(line);
+            modalContainer.appendChild(actionButton);
+            modalWrapper.appendChild(modalContainer);
     }
     catch(error){
         console.log("Error generating Modal:" + error.stack);
     }
 }
 
+// Generate the modal gallery elements
+function GenerateModalGalleryElements(){
+    const globalUrl = "http://localhost:5678/api";
+    const worksUrl = globalUrl + "/works";
+    try{
+        const modalGallery = document.querySelector(".modal-workspace");
+        modalGallery.classList.add("modal-gallery");
+        fetch(worksUrl)
+        .then(response => {
+            if(!response.ok){
+                throw new Error("Error while trying to fetch data for the modal gallery")
+            }
+            return response.json();
+        })
+        .then(data => {
+            data.forEach(element => {
+                const imgContainer = document.createElement("div");
+                const imgElement = document.createElement("img");
+                const deleteButton = document.createElement("button");
+                const deleteIcon = document.createElement("i")
+                imgContainer.classList.add("img-container")
+                imgElement.classList.add("modal-img");
+                imgElement.src = element.imageUrl;
+                deleteIcon.classList.add("fa-solid","fa-trash-can");
+                deleteButton.classList.add("delete-button");
+                
+                deleteButton.appendChild(deleteIcon);
+                imgContainer.appendChild(imgElement);
+                imgContainer.appendChild(deleteButton);
+                modalGallery.appendChild(imgContainer);
+            })
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    }
+    catch(error){
+        
+    }
+}
+
+// Handle Modal Logic
+function HandleModal(){
+    try{
+        // If page id = 1 display and handle logic for modal gallery
+        const actionButton = document.querySelector(".action-button");
+        const backButton = document.querySelector(".back-button");
+        const title = document.querySelector(".modal-title");
+        const modalWorkSpace = document.querySelector(".modal-workspace");
+
+        function DisplayModalPage(){
+            console.log(modalPageId);
+            if(modalPageId === 1){
+                // Reset gallery
+                modalWorkSpace.innerHTML = "";
+                // Hide back arrow 
+                backButton.style.display = "none";
+                backButton.setAttribute("disabled", "true");
+                // Title
+                title.innerHTML = "Galerie photo";
+                // Generate Modal Gallery
+                GenerateModalGalleryElements();
+                // Action button
+                actionButton.textContent = "Ajouter une photo"
+                actionButton.addEventListener("click", (event) => {
+                    modalPageId = 2;
+                    HandleModal();
+                })
+    
+            }
+            // If page id = 2 display ajout photo and handle logic
+            if(modalPageId === 2){
+                // reset modalWorkspace before populating
+                modalWorkSpace.innerHTML = "";
+                // Show back arrow
+                backButton.style.display = "flex";
+                backButton.removeAttribute("disabled");
+                backButton.addEventListener("click", (event) => {
+                    modalPageId = 1;
+                    modalWorkSpace.innerHTML = "";
+                    HandleModal();
+                })
+                // Title
+                title.innerHTML = "Ajout photo";
+                // Action button 
+                actionButton.textContent = "Valider"
+            }
+            if(modalPageId === null){
+                throw new Error("Modal page Id is invalid");
+            }
+        }
+        DisplayModalPage();
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Setup all admin buttons to open/close modal
 function AddModalEventListeners(){
     try{
-        const adminButtons = document.querySelectorAll("button.admin-modal, a.admin-modal");
-        console.log(adminButtons);
+        const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
         adminButtons.forEach(item => {
            item.addEventListener("click", (event) => {
                 try{
@@ -470,6 +525,7 @@ function AddModalEventListeners(){
     }
 }
 
+// Handles display style of modal based on bool
 function DisplayModal(){
     try{
         const modalContainer = document.getElementById("modal1");
@@ -480,12 +536,14 @@ function DisplayModal(){
         else if(!IsModalOpen){
             modalContainer.style.display = "flex";
             IsModalOpen = true;
+            HandleModal();
         }
     }
     catch(error){
         console.log(error);
     }
 }
+
 //** INITIALIZE **//
 async function Initialize(){
     try{
@@ -505,7 +563,7 @@ async function Initialize(){
         if(IsAdmin){
             HandleAdminChanges();
             GenerateModal();
-            AddModalEventListeners()
+            AddModalEventListeners();
         }
         if (!IsAdmin){
             // Change projets' class
