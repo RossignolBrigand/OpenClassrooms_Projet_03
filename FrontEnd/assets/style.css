@@ -471,3 +471,18 @@ input[type="submit"]{
 	font-size: 10px;
   }
 
+/*** UPLOAD FORM ***/
+
+#upload-form label {
+	display: block;
+}
+
+#preview-image {
+	width: 40%;
+}
+
+#submit-button.disabled{
+	background-color: #A7A7A7;
+	border: #A7A7A7;
+	cursor: not-allowed;
+}

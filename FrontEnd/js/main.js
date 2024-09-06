@@ -1,5 +1,6 @@
 //* Global Properties *//
 const globalUrl = "http://localhost:5678/api"
+const worksUrl = globalUrl + "/works";
 
 // Admin properties
 let IsAdmin = false;
@@ -28,36 +29,6 @@ async function FetchData(url) {
         // Return null if there's an error
         console.error('Error fetching data:', error);
         return null;
-    }
-}
-// Function to send token to API when need for Administrator status
-function FetchAuthentication() {
-    try{
-        const loginPostUrl = globalUrl + "/users/login";
-        const token = localStorage.getItem("token");
-        console.log(token);
-        if(token == null){
-            throw new Error("Error while trying to retrieve authentication token ")
-        }
-        fetch(loginPostUrl, {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-        .then(response => {
-            if(!response.ok){
-                throw new Error("Error while trying to retrieve response from API");
-            }
-            console.log("token" + response);
-            return response.json()
-        })
-        .catch(error => {
-            console.error(error)
-        });
-    }
-    catch(error){
-        console.log(error);
     }
 }
 
@@ -158,7 +129,7 @@ function SortbyCategory(data, category) {
 
         let newSet = new Set();
         data.forEach(item => {
-            if(item.category.name == category){
+            if(item.category.name === category){
                 newSet.add(item);  
             }
         });
@@ -237,11 +208,11 @@ function StartLogoutTimer() {
             // Display an alert to prompt for imminent logout
             const confirmation = confirm("Votre session va expirer dans 1 minute. Souhaitez-vous rester connecté(e) ?");
     
-            if (confirmation.ok) {
+            if (confirmation) {
                 //Restart the timer on confirm
                 StartLogoutTimer();
             }
-            else {
+            if(!confirmation){
                 HandleLogout();
             }
           }, (logoutTime - 1) * 60 * 1000); // Starts the alert 1 minute before timeout
@@ -250,7 +221,6 @@ function StartLogoutTimer() {
         return;
     }
     }
-
 // Check for Admin Status
 function CheckForAdmin(){
     try{
@@ -263,7 +233,7 @@ function CheckForAdmin(){
         console.log(error);
     }
 }
-// HandleAdminChanges
+// Handles main page changes like login/logout if Admin
 function HandleAdminChanges(){
     try{
         //Check for Admin status and modifies the page accordingly
@@ -289,7 +259,7 @@ function HandleAdminChanges(){
         console.log(error);
     }
 }
-
+// Handles generation of topbar and modify buttons
 function HandleEditionMode(){
     try{
         // Edition Top bar
@@ -328,7 +298,6 @@ function HandleEditionMode(){
         console.log(error);
     }
 }
-
 // Handle Logout Behaviour
 function HandleLogout(){
     IsAdmin = false;
@@ -337,13 +306,15 @@ function HandleLogout(){
     // Clear login Timer
     clearTimeout(logoutTimer);
     //Reset page
+    location.reload();
     //TODO Not working for the moment
     Initialize();
 }
 
-//** MODAL  **//
+//*** MODAL ***//
 
-// Ge
+// Generate all the necessary html elements of the modal 
+// except for the gallery element and the form to upload photos
 function GenerateModal(){
     try{
             // modal background
@@ -394,27 +365,42 @@ function GenerateModal(){
             // Action button
             const actionButton = document.createElement("button");
             actionButton.classList.add("action-button");
-            actionButton.textContent = "Action";
+            actionButton.setAttribute("id", "gallery-button");
+            actionButton.textContent = "Ajouter une photo";
+            // Submit button
+            const submitButton = document.createElement("button");
+            submitButton.classList.add("action-button");
+            submitButton.setAttribute("id", "submit-button");
+            submitButton.textContent = "Valider";
             // Append everything
             modalContainer.appendChild(modalTitle);
             modalContainer.appendChild(modalWorkSpace);
             modalContainer.appendChild(line);
             modalContainer.appendChild(actionButton);
+            modalContainer.appendChild(submitButton);
             modalWrapper.appendChild(modalContainer);
+            // Add EventListener on modal to close when outside wrapper or its children
+            modal.addEventListener("click", (e) => {
+                if(!modalWrapper.contains(e.target)) {
+                    DisplayModal();
+                }
+            }); 
     }
     catch(error){
         console.log("Error generating Modal:" + error.stack);
     }
 }
 
-// Generate the modal gallery elements
-function GenerateModalGalleryElements(){
+// Generate the modal admin gallery elements (photo + delete buttons)
+function GenerateAdminGalleryElements(){
     const globalUrl = "http://localhost:5678/api";
     const worksUrl = globalUrl + "/works";
     try{
         const modalGallery = document.querySelector(".modal-workspace");
         modalGallery.classList.add("modal-gallery");
-        fetch(worksUrl)
+        //Reset the gallery each time it is called
+        modalGallery.innerHTML = "";
+        return fetch(worksUrl)
         .then(response => {
             if(!response.ok){
                 throw new Error("Error while trying to fetch data for the modal gallery")
@@ -426,9 +412,11 @@ function GenerateModalGalleryElements(){
                 const imgContainer = document.createElement("div");
                 const imgElement = document.createElement("img");
                 const deleteButton = document.createElement("button");
-                const deleteIcon = document.createElement("i")
-                imgContainer.classList.add("img-container")
+                const deleteIcon = document.createElement("i");
+
+                imgContainer.classList.add("img-container");
                 imgElement.classList.add("modal-img");
+                imgElement.setAttribute("id", element.id);
                 imgElement.src = element.imageUrl;
                 deleteIcon.classList.add("fa-solid","fa-trash-can");
                 deleteButton.classList.add("delete-button");
@@ -444,86 +432,295 @@ function GenerateModalGalleryElements(){
         });
     }
     catch(error){
-        
-    }
-}
-
-// Handle Modal Logic
-function HandleModal(){
-    try{
-        // If page id = 1 display and handle logic for modal gallery
-        const actionButton = document.querySelector(".action-button");
-        const backButton = document.querySelector(".back-button");
-        const title = document.querySelector(".modal-title");
-        const modalWorkSpace = document.querySelector(".modal-workspace");
-
-        function DisplayModalPage(){
-            console.log(modalPageId);
-            if(modalPageId === 1){
-                // Reset gallery
-                modalWorkSpace.innerHTML = "";
-                // Hide back arrow 
-                backButton.style.display = "none";
-                backButton.setAttribute("disabled", "true");
-                // Title
-                title.innerHTML = "Galerie photo";
-                // Generate Modal Gallery
-                GenerateModalGalleryElements();
-                // Action button
-                actionButton.textContent = "Ajouter une photo"
-                actionButton.addEventListener("click", (event) => {
-                    modalPageId = 2;
-                    HandleModal();
-                })
-    
-            }
-            // If page id = 2 display ajout photo and handle logic
-            if(modalPageId === 2){
-                // reset modalWorkspace before populating
-                modalWorkSpace.innerHTML = "";
-                // Show back arrow
-                backButton.style.display = "flex";
-                backButton.removeAttribute("disabled");
-                backButton.addEventListener("click", (event) => {
-                    modalPageId = 1;
-                    modalWorkSpace.innerHTML = "";
-                    HandleModal();
-                })
-                // Title
-                title.innerHTML = "Ajout photo";
-                // Action button 
-                actionButton.textContent = "Valider"
-            }
-            if(modalPageId === null){
-                throw new Error("Modal page Id is invalid");
-            }
-        }
-        DisplayModalPage();
-    }
-    catch(error){
         console.log(error);
     }
 }
 
-// Setup all admin buttons to open/close modal
-function AddModalEventListeners(){
+// Call the admin upload form elements generation and handle form data and submission logic 
+function GenerateAdminUploadForm(){
+    // fetch categories
+    const categoriesUrl = `${globalUrl}/categories`
+
+    const modalWorkspace = document.querySelector(".modal-workspace");
+    modalWorkspace.classList.remove("modal-gallery");
+    // Reset modal workspace before populating
+    modalWorkspace.innerHTML = "";
+    // Instantiate
+    FetchData(categoriesUrl)
+    .then((data) => {
+        GenerateUploadFormElements(data);
+    })
+    .then(() => {
+        HandleUploadGroupListener(); // Big button = input file
+        HandleUploadImageListener(); // File preview logic
+        AdminSubmitFormListeners(); // Form submission listener and button logic
+    })
+    .catch(error => {
+        console.log(error);
+    })
+}
+
+// Generate Html elements of the upload form
+function GenerateUploadFormElements(data){
+        try{
+        const modalWorkspace = document.querySelector(".modal-workspace");
+        //* Upload Field
+        const uploadGroup = document.createElement("button");
+        const uploadButton = document.createElement("button");
+        const uploadMsg = document.createElement("p");
+        const uploadInput = document.createElement("input");
+        const uploadPreview = document.createElement("div");
+        const uploadPreviewIcon = document.createElement("i");
+        const uploadPreviewImage = document.createElement("img");
+        // Group (Button)
+        uploadGroup.className = "form-group";
+        uploadGroup.setAttribute("id", "upload-group");
+        uploadGroup.setAttribute("type", "button");
+        // Input
+        uploadInput.classList.add("form-input");
+        uploadInput.setAttribute("type", "file");
+        uploadInput.setAttribute("id", "input-file");
+        uploadInput.setAttribute("name", "input-file");
+        uploadInput.setAttribute("accept", ".jpg, .jpeg, .png");
+        uploadInput.style.opacity = 0; // Hide the input field without disabling it
+        uploadInput.style.display = "none"; // Hide the added buttons and filename created by input
+        //* Preview
+        uploadPreview.className = "file-preview-container"
+        uploadPreview.appendChild(uploadPreviewIcon);
+        uploadPreview.appendChild(uploadPreviewImage);
+        // Preview Icon
+        uploadPreviewIcon.style.height = "60px";
+        uploadPreviewIcon.style.fontSize = "24px";
+        uploadPreviewIcon.style.color = "#B9C5CC";
+        uploadPreviewIcon.setAttribute("id", "preview-icon");
+        uploadPreviewIcon.classList.add("fa-regular", "fa-image");
+        // Preview Img
+        uploadPreviewImage.src = "";
+        uploadPreviewImage.setAttribute("id", "preview-image");
+        uploadPreviewImage.style.display = "none";
+        // Button
+        uploadButton.setAttribute("type", "button");
+        uploadButton.setAttribute("id", "fake-button");
+        uploadButton.textContent = "+ Ajouter photo";
+        // Message
+        uploadMsg.setAttribute("id", "file-message");
+        uploadMsg.innerHTML = "jpg, png: 4Mo max.";
+        // Append
+        uploadGroup.appendChild(uploadInput);
+        uploadGroup.appendChild(uploadPreview);
+        uploadGroup.appendChild(uploadButton);
+        uploadGroup.appendChild(uploadMsg);
+
+        //* Title
+        const titleInput = document.createElement("input");
+        const titleLabel = document.createElement("label");
+        // Group
+        const titleGroup = document.createElement("div");
+        titleGroup.className = "form-group";
+        //Input Field
+        titleInput.classList.add("form-input");
+        titleInput.setAttribute("name", "input-title");
+        titleInput.setAttribute("id", "input-title");
+        titleInput.setAttribute("type", "text");
+        titleInput.setAttribute("required", "true");
+        // Label
+        titleLabel.setAttribute("label", "Titre");
+        titleLabel.setAttribute("for", "input-title");
+        titleLabel.innerHTML = "Titre";
+        // Append
+        titleGroup.appendChild(titleLabel);
+        titleGroup.appendChild(titleInput);
+
+        //* Category
+        const categoryInput = document.createElement("select");
+        const categoryLabel = document.createElement("label");
+        //Group
+        const categoryGroup = document.createElement("div");
+        categoryGroup.className = "form-group";
+        // Input field
+        categoryInput.classList.add("form-input");
+        categoryInput.setAttribute("name", "select-category");
+        categoryInput.setAttribute("id", "select-category");
+        categoryInput.setAttribute("type", "select");
+        categoryInput.setAttribute("required", "true");
+        categoryInput.value = 0;
+        // Options
+        data.forEach(category => {
+            const categoryOption = document.createElement("option");
+            categoryOption.value = category.id;
+            categoryOption.textContent = category.name;
+            categoryInput.appendChild(categoryOption);
+        })
+        // Label
+        categoryLabel.setAttribute("label", "Catégorie");
+        categoryLabel.setAttribute("for", "select-category");
+        categoryLabel.innerHTML = "Catégorie";
+        //Append
+        categoryGroup.appendChild(categoryLabel);
+        categoryGroup.appendChild(categoryInput);
+
+        //* Form
+        const uploadForm = document.createElement("form");
+        uploadForm.setAttribute("id", "upload-form");
+        uploadForm.appendChild(uploadGroup);
+        uploadForm.appendChild(titleGroup);
+        uploadForm.appendChild(categoryGroup);
+        modalWorkspace.appendChild(uploadForm);
+        }
+        catch(error){
+            console.log(error);
+        }
+}
+
+// Handle image input
+function HandleUploadGroupListener(){
     try{
-        const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
-        adminButtons.forEach(item => {
-           item.addEventListener("click", (event) => {
-                try{
-                    DisplayModal();
-                }
-                catch(error){
-                    console.log(error);
-                }
-            })
+        const uploadButton = document.getElementById("upload-group");
+        const fileInput = document.getElementById("input-file");
+        // Make the big button as if click on file input
+        uploadButton.addEventListener("click", function() {
+            fileInput.click();
         });
     }
     catch(error){
         console.log(error);
     }
 }
+
+// Handle Upload Image preview and file validation
+function HandleUploadImageListener(){
+    const fileInput = document.getElementById("input-file");
+    fileInput.addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        const fakeButton = document.getElementById("fake-button");
+        const errorMessage = document.getElementById("file-message");
+        const previewIcon = document.getElementById("preview-icon");
+        const previewImage = document.getElementById("preview-image");
+        // File validation
+        const MAX_FILE_SIZE_MB = 4;  // Maximum allowed file size (4 MB)
+        const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes for JS
+        const acceptedTypes = ["image/jpg", "image/jpeg", "image/png"]; // Should always be true based on input acceptance but handles error message display
+        
+        if(!file){
+            // Nothing should happen
+            return;
+        }
+        // If file type is wrong display error message
+        if(!acceptedTypes.includes(file.type)) {
+            errorMessage.style.display = "block"; // Show error message if it was previously hidden
+            fakeButton.style.display = "block"; // Show button
+            previewIcon.style.display = "block"; // Show the icon
+            previewImage.style.display = "none"; // Hide the image
+            errorMessage.textContent = "Error: the type of file is not accepted";
+            return;
+        }
+        // If file too big display error message
+        if(file.size > MAX_FILE_SIZE_BYTES) {
+            errorMessage.style.display = "block"; // Show error message
+            fakeButton.style.display = "block"; // Show fake button
+            previewIcon.style.display = "block"; // Show the icon
+            previewImage.style.display = "none"; // Hide the image
+            errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB})`;
+            return;
+        }
+        // If all validations pass, update preview and hide all unnecessary elements
+        errorMessage.style.display = "none"; // Hide error message
+        fakeButton.style.display = "none"; // Hide button
+        previewIcon.style.display = "none"; // Hide the icon
+        previewImage.style.display = "block"; // Display the image
+        const reader = new FileReader();
+        reader.onload = function(element) {
+            previewImage.src = element.target.result;  // Display image preview
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Display Modal Gallery
+function DisplayAdminGalleryPage(){
+    const actionButton = document.getElementById("gallery-button");
+    const submitButton = document.getElementById("submit-button");
+    const backButton = document.querySelector(".back-button");
+    const title = document.querySelector(".modal-title");
+    const modalWorkspace = document.querySelector(".modal-workspace");
+    try{
+        modalPageId = 1;
+        // Reset gallery
+        modalWorkspace.innerHTML = "";
+        // Hide back arrow 
+        backButton.style.display = "none";
+        backButton.setAttribute("disabled", "true");
+        // Title
+        title.innerHTML = "Galerie photo";
+        // Generate Modal Gallery
+        GenerateAdminGalleryElements()
+            .then(() => {
+                // Add the event listeners on delete buttons
+                AddAdminDeleteEventListeners();
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        // Action button
+        actionButton.style.display = "block";
+        actionButton.addEventListener("click", DisplayAdminUploadPage);
+        //Submit button
+        submitButton.style.display = "none";
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Display Modal UploadForm
+function DisplayAdminUploadPage(){
+    const actionButton = document.getElementById("gallery-button");
+    const submitButton = document.getElementById("submit-button");
+    const backButton = document.querySelector(".back-button");
+    const title = document.querySelector(".modal-title");
+    const modalWorkspace = document.querySelector(".modal-workspace");
+    try{
+        modalPageId = 2;
+        // reset modalWorkspace before populating
+        modalWorkspace.innerHTML = "";
+        // Show back arrow
+        backButton.style.display = "flex";
+        backButton.removeAttribute("disabled");
+        backButton.addEventListener("click", DisplayAdminGalleryPage);
+        // Title
+        title.innerHTML = "Ajout photo";
+        // Action button 
+        actionButton.style.display = "none";
+        actionButton.removeEventListener("click", DisplayAdminUploadPage); // Clear the event listener of the action button to be sure;
+        // Submit button
+        submitButton.style.display = "block";
+        submitButton.classList.add("disabled", "true");
+        submitButton.disabled = true;
+        // Display form
+        GenerateAdminUploadForm()
+        // Check form fields
+        CheckFormFields();
+    }
+    catch(error){
+        console.log(error);
+    }
+
+}
+
+// Handle Modal Pages Logic
+function HandleModalPages(){
+    try{
+        if(modalPageId === 1){
+            DisplayAdminGalleryPage();
+        }
+        if(modalPageId === 2){
+            DisplayAdminUploadPage();
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+ }
 
 // Handles display style of modal based on bool
 function DisplayModal(){
@@ -536,12 +733,191 @@ function DisplayModal(){
         else if(!IsModalOpen){
             modalContainer.style.display = "flex";
             IsModalOpen = true;
-            HandleModal();
+            HandleModalPages();
         }
     }
     catch(error){
         console.log(error);
     }
+}
+
+// Setup all admin buttons to open/close modal
+function AddModalEventListeners(){
+    try{
+        const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
+        adminButtons.forEach(item => {
+           item.addEventListener("click", DisplayModal);
+        });
+    }       
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Function to send works with authorization
+function PostNewWork() {
+    try{
+        const sendWorkUrl = worksUrl;
+        const token = sessionStorage.getItem("token");
+
+        const inputFile = document.getElementById("input-file");
+        const inputTitle = document.getElementById("input-title");
+        const inputCategory = document.getElementById("select-category");
+
+        if(token === null){
+            throw new Error("Error while trying to retrieve authentication token ")
+        }
+
+        // Create formData package
+        const formData = new FormData();
+        formData.append("image", inputFile.files[0]);
+        formData.append("title", inputTitle.value);
+        formData.append("category", inputCategory.value);
+
+        // Request
+        fetch(sendWorkUrl, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        })
+        .then(response => {
+            if(!response.ok){
+                throw new Error("Error while trying to retrieve response from API");
+            }
+            if(response.ok){
+                console.log("Fichier téléversé avec succès!");
+                DisplayAdminUploadPage(); // Reset Modal Page
+                FetchData(worksUrl)
+                .then(data =>{
+                    GenerateFigureElements(data);
+                })
+            }
+        })
+        .catch(error => {
+            console.error(error)
+        });
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Function to be called by the delete buttons
+function DeleteWork(id){
+    try{
+        const deleteUrl = `${worksUrl}/${id}`;
+        const token = sessionStorage.getItem("token");
+
+        if(token === null){
+            throw new Error("Error: ID token not found")
+        }
+        const confirmation =  confirm("Voulez vous vraiment supprimer ce fichier ? (l'action est irréversible) " + "// id de l'objet: " + id);
+        if(!confirmation){
+            return;
+        }
+        if(confirmation){
+        fetch(deleteUrl, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(response =>{
+            if(!response.ok){
+                console.error("Erreur lors de l'envoi de la requête")
+            }
+            else{
+                DisplayAdminGalleryPage();
+                FetchData(worksUrl)
+                .then(data => {
+                    GenerateFigureElements(data);
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+            }
+        })
+        .catch(error => {
+            console.error("Une erreur s'est produite: ", error);
+        })
+        }    
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Find and wire all the delete buttons in the modal to the DeleteWork function while passing the img id 
+function AddAdminDeleteEventListeners(){
+    // Find img containers
+    const imgContainers = document.querySelectorAll(".img-container");
+    // Get the button within each container
+    imgContainers.forEach(function(container){
+        const button = container.querySelector(".delete-button");
+        // for each button find the img within parent container and call the DeleteWork function passing the image id as a parameter 
+        button.onclick = function() {
+            const img = container.querySelector(".modal-img");
+            const id = img.id;
+            DeleteWork(id);
+        }
+    })
+}
+
+function AdminSubmitFormListeners(){
+    const inputFile = document.getElementById("input-file");
+    const inputTitle = document.getElementById("input-title");
+    const selectCategory = document.getElementById("select-category");
+
+    const submitButton = document.getElementById("submit-button");
+
+    // Check for data and disable/enable the button accordingly
+    inputFile.addEventListener("change", CheckFormFields);
+    inputTitle.addEventListener("input", CheckFormFields);
+    selectCategory.addEventListener("change", CheckFormFields);
+    
+    // Submit button listener
+    submitButton.addEventListener("click", (event) => {
+        try{
+            event.preventDefault();
+            PostNewWork();
+        }  
+        catch(error){
+            console.log(error);
+        }
+    })
+}
+
+// Check that data is present to enable submission button
+//TODO Still not working got to work on that
+function CheckFormFields() {
+    try{
+    const textValue = document.getElementById("input-title").value.trim();
+    const selectValue = document.getElementById("select-category").value > 0;
+    const fileValue = document.getElementById("input-file").files.length > 0;
+
+    const submitButton = document.getElementById("submit-button");
+
+    console.log(textValue);
+    console.log(selectValue);
+    console.log(fileValue);
+    console.log(submitButton);
+
+    // Enable submit button only if all fields are filled and a file is selected
+    if (textValue && selectValue && fileValue) {
+        submitButton.classList.remove("disabled");
+        submitButton.disabled = false;
+    } 
+    else {
+        submitButton.classList.add("disabled");
+        submitButton.disabled = true;
+    }
+    }
+    catch(error){
+        console.log("Error Check Form Fields:"+ error.lineNumber + error);
+    }
+
 }
 
 //** INITIALIZE **//
