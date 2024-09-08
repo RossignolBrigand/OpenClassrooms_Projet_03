@@ -85,7 +85,5 @@ function Initialize() {
 }
 
 //! Start
-Initialize();
-// Test
+Initialize()
 console.log("End of program: Login");
-

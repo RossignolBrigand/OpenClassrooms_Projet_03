@@ -4,8 +4,6 @@ const worksUrl = globalUrl + "/works";
 
 // Admin properties
 let IsAdmin = false;
-let logoutTimer;
-const logoutTime = 10; // How much time you want the session to be
 
 // Modal properties
 
@@ -13,6 +11,7 @@ let IsModalOpen = false;
 let modalPageId = 1;
 
 //****** FETCH *******/
+
 // Function to call API based on URL
 async function FetchData(url) {
     try {
@@ -33,29 +32,28 @@ async function FetchData(url) {
 }
 
 //****** GALLERY *******/
-/** Function that handles construction of html elements of the gallery based on input (data);
- * @param {Object} data - The data you want to be generated within the gallery either fetched from the API or from a sorted Set.
- */
+
+// Generates the home page gallery based on data input (API/works || newSet)
 function GenerateFigureElements(data) {
     try{
-        if(data == null){
+        if(data === null){
             throw new Error("Error while trying to handle data input")
         }
         // Get Gallery Element
         const gallery = document.querySelector(".gallery");
         // Clear the gallery before inputing anything
         gallery.innerHTML = "";
-        // Create HTML Elements
-        for ( let i = 0; i < data.length; i++ ) {
+
+        data.forEach((item) => {
             // Create HTML Figure
             const figureElement = document.createElement("figure");
             // Create HTML Img and get url
             const imageElement = document.createElement("img");
-            imageElement.src = data[i].imageUrl;
+            imageElement.src = item.imageUrl;
             
             // Create HTML Caption and get data
             const captionElement = document.createElement("figcaption");
-            captionElement.innerHTML = data[i].title;
+            captionElement.innerHTML = item.title;
             
             // Append img and caption elements to each figure
             figureElement.appendChild(imageElement);
@@ -63,21 +61,18 @@ function GenerateFigureElements(data) {
             
             // Append each figure to the gallery
             gallery.appendChild(figureElement);
-        }
-        // return gallery;
+        });
     }
     catch(error){
         console.error(error);
     }
 }
 
-/**  Generate Filter buttons based on categories fetched from API and a default one to reset filtering
- * @param {Object} data - The data needed to generate the buttons based on the categories stored in the API
- */
+// Generates filter buttons on home page based on data (API/categories)
 function GenerateFilterButtons(data) {
     try{
         // Error Management
-        if(data == null){
+        if(data === null){
             throw new Error("Error while trying to handle data input")
         }
 
@@ -98,54 +93,85 @@ function GenerateFilterButtons(data) {
         filterDiv.appendChild(defaultButton);
     
         // Create Categories Filter Buttons
-        for (let i = 0; i < data.length; i++) {
+        data.forEach((item) => {
             const filterElement = document.createElement("button");
-            filterElement.innerHTML = data[i].name;
+            filterElement.innerHTML = item.name;
             filterElement.classList.add("filter-button");
-            filterElement.setAttribute("id", `button-${data[i].id}`);
+            filterElement.setAttribute("id", `button-${item.id}`);
                 
             filterDiv.appendChild(filterElement);
-        }
+        })
     }
     catch(error){
         console.error(error);
     }
 }
 
-/**  Function to create a set from input data as an array and sorts it based on a category as string. Returns a new Set that can be used in other functions.
- * @param {Object} data -  the data you want to sort.
- * @param {String} category - the category you want the data to be sorted by (as a string)
- * @returns the sorted data as a new Array.
-*/
+// Generates a set from the 
 function SortbyCategory(data, category) {
     try{
         // Error management
-        if(data == null){
+        if(data === null){
             throw new Error("Error: Cannot retrieve data")
         }
-        if(category == null){
+        if(category === null){
             throw new Error("Error: Cannot retrieve categories")
         }
-
+        // Set construction
         let newSet = new Set();
         data.forEach(item => {
             if(item.category.name === category){
                 newSet.add(item);  
             }
         });
-        const newArray = Array.from(newSet);
-        return newArray;
+        return newSet;
     }
     catch(error){
         console.error(error);
     }
 }
 
-// Handle Category buttons logic
-function AddFilterButtonsEventListeners(catData, baseData) {
+// Handles category buttons logic
+function AddFilterButtonsEventListeners(categories, data) {
     try{
         const buttons = document.querySelectorAll(".filter-button")
         let activeButton = null;
+        
+        categories.forEach((item) => {
+                // Loops through all categories to find each corresponding button and assign it the EventListener
+                const button = document.getElementById(`button-${item.id}`);
+                button.addEventListener("click", function() {
+                    // Check if button is already active or not
+                    if (button === activeButton){
+                        DeactivateAllButtons();
+                        GenerateFigureElements(data);
+                    }
+                    else{
+                        // if clicked and not already active, activates the button
+                        DeactivateAllButtons();
+                        button.classList.add("active");
+                        activeButton = button;
+                        const sortedData = SortbyCategory(data, item.name);
+                        GenerateFigureElements(sortedData);
+                    }
+                });
+            });
+
+        //Handle the default button behaviour
+        const button = document.getElementById("button-default");
+        button.addEventListener("click", function () {
+            if (button === activeButton) {
+                    DeactivateAllButtons();
+                    GenerateFigureElements(data);
+                }
+            else {
+                DeactivateAllButtons();
+                button.classList.add("active");
+                activeButton = button;
+                GenerateFigureElements(data);
+            }
+        });
+            
         //*Function that handles the active state of buttons and allow the gallery to return to a default state when either clicked on default button or a filter button is deactivated.
         function DeactivateAllButtons() {
             buttons.forEach(button => {
@@ -153,43 +179,6 @@ function AddFilterButtonsEventListeners(catData, baseData) {
             });
             activeButton = null;
           }
-    
-        for (let i = 0; i < catData.length + 1 ; i++) {
-            // Loops through all categories to find each corresponding button and assign it the EventListener
-            if (i < catData.length) {
-                const button = document.getElementById(`button-${catData[i].id}`);
-                button.addEventListener("click", function() {
-                    // Check if button is already active or not
-                    if (button === activeButton){
-                       DeactivateAllButtons();
-                       GenerateFigureElements(baseData);
-                    }
-                    // if clicked and not already active, activates the button
-                    else {
-                        DeactivateAllButtons();
-                        button.classList.add("active");
-                        activeButton = button;
-                        GenerateFigureElements(SortbyCategory(baseData, baseData[i].category.name));
-                    }
-                });
-            }
-            //Handle the default button behaviour
-            else {
-                const button = document.getElementById("button-default");
-                button.addEventListener("click", function () {
-                    if (button === activeButton) {
-                        DeactivateAllButtons();
-                        GenerateFigureElements(baseData);
-                    }
-                    else {
-                        DeactivateAllButtons();
-                        button.classList.add("active");
-                        activeButton = button;
-                        GenerateFigureElements(baseData);
-                    }
-                });
-            }
-        }
     }
     catch(error){
         console.error(error);
@@ -198,36 +187,15 @@ function AddFilterButtonsEventListeners(catData, baseData) {
 
 //****** ADMIN-MODE *******/
 
-// Handle Automatic logout 
-function StartLogoutTimer() {
-    if(IsAdmin){
-        // Abort former timer
-        clearTimeout(logoutTimer);
-        //Start timer 
-        logoutTimer = setTimeout(() => {    
-            // Display an alert to prompt for imminent logout
-            const confirmation = confirm("Votre session va expirer dans 1 minute. Souhaitez-vous rester connecté(e) ?");
-    
-            if (confirmation) {
-                //Restart the timer on confirm
-                StartLogoutTimer();
-            }
-            if(!confirmation){
-                HandleLogout();
-            }
-          }, (logoutTime - 1) * 60 * 1000); // Starts the alert 1 minute before timeout
-    } 
-    else {
-        return;
-    }
-    }
-
 // Check for Admin Status
 function CheckForAdmin(){
     try{
         const token = sessionStorage.getItem("token");
         if(token != null){
             IsAdmin = true;
+        }
+        else{
+            throw new Error("Error: token credentials were not found!")
         }
     }
     catch(error){
@@ -307,15 +275,11 @@ function HandleLogout(){
     IsAdmin = false;
     //Clear sessionToken
     sessionStorage.removeItem("token");
-    // Clear login Timer
-    clearTimeout(logoutTimer);
     //Reset page
     location.reload();
-    //TODO Not working for the moment
-    Initialize();
 }
 
-//*** MODAL ***//
+//****** MODAL ******//
 
 // Generate all the necessary html elements of the modal 
 // except for the gallery element and the form to upload photos
@@ -395,6 +359,39 @@ function GenerateModal(){
     }
 }
 
+// Handles display style of modal based on bool
+function DisplayModal(){
+    try{
+        const modalContainer = document.getElementById("modal1");
+        if(IsModalOpen) {
+            modalContainer.style.display = "none";
+            IsModalOpen = false;
+        }
+        else if(!IsModalOpen){
+            modalContainer.style.display = "flex";
+            IsModalOpen = true;
+            HandleModalPages();
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Handle Modal pages generation logic (page 1 or page 2)
+function HandleModalPages(){
+    try{
+        if(modalPageId === 1){
+            DisplayAdminGalleryPage();
+        }
+        if(modalPageId === 2){
+            DisplayAdminUploadPage();
+        }
+    }
+    catch(error){
+        console.log(error);
+    }
+ }
 // Generate the modal admin gallery elements (photo + delete buttons)
 function GenerateAdminGalleryElements(){
     const globalUrl = "http://localhost:5678/api";
@@ -440,28 +437,40 @@ function GenerateAdminGalleryElements(){
     }
 }
 
-// Call the admin upload form elements generation and handle form data and submission logic 
-function GenerateAdminUploadForm(){
-    // fetch categories
-    const categoriesUrl = `${globalUrl}/categories`
-
+// Display Modal Gallery
+function DisplayAdminGalleryPage(){
+    const actionButton = document.getElementById("gallery-button");
+    const submitButton = document.getElementById("submit-button");
+    const backButton = document.querySelector(".back-button");
+    const title = document.querySelector(".modal-title");
     const modalWorkspace = document.querySelector(".modal-workspace");
-    modalWorkspace.classList.remove("modal-gallery");
-    // Reset modal workspace before populating
-    modalWorkspace.innerHTML = "";
-    // Instantiate
-    FetchData(categoriesUrl)
-    .then((data) => {
-        GenerateUploadFormElements(data);
-    })
-    .then(() => {
-        HandleUploadGroupListener(); // Big button = input file
-        HandleUploadImageListener(); // File preview logic
-        AdminSubmitFormListeners(); // Form submission listener and button logic
-    })
-    .catch(error => {
+    try{
+        modalPageId = 1;
+        // Reset gallery
+        modalWorkspace.innerHTML = "";
+        // Hide back arrow 
+        backButton.style.display = "none";
+        backButton.setAttribute("disabled", "true");
+        // Title
+        title.innerHTML = "Galerie photo";
+        // Generate Modal Gallery
+        GenerateAdminGalleryElements()
+            .then(() => {
+                // Add the event listeners on delete buttons
+                AddAdminDeleteEventListeners();
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        // Action button
+        actionButton.style.display = "block";
+        actionButton.addEventListener("click", DisplayAdminUploadPage);
+        //Submit button
+        submitButton.style.display = "none";
+    }
+    catch(error){
         console.log(error);
-    })
+    }
 }
 
 // Generate Html elements of the upload form
@@ -578,100 +587,19 @@ function GenerateUploadFormElements(data){
         }
 }
 
-// Handle image input
-function HandleUploadGroupListener(){
+// Call the admin upload form elements generation and handle form data and submission logic 
+async function DisplayUploadForm(){
     try{
-        const uploadButton = document.getElementById("upload-group");
-        const fileInput = document.getElementById("input-file");
-        // Make the big button as if click on file input
-        uploadButton.addEventListener("click", function() {
-            fileInput.click();
-        });
-    }
-    catch(error){
-        console.log(error);
-    }
-}
-
-// Handle Upload Image preview and file validation
-function HandleUploadImageListener(){
-    const fileInput = document.getElementById("input-file");
-    fileInput.addEventListener("change", function(event) {
-        const file = event.target.files[0];
-        const fakeButton = document.getElementById("fake-button");
-        const errorMessage = document.getElementById("file-message");
-        const previewIcon = document.getElementById("preview-icon");
-        const previewImage = document.getElementById("preview-image");
-        // File validation
-        const MAX_FILE_SIZE_MB = 4;  // Maximum allowed file size (4 MB)
-        const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes for JS
-        const acceptedTypes = ["image/jpg", "image/jpeg", "image/png"]; // Should always be true based on input acceptance but handles error message display
-        
-        if(!file){
-            // Nothing should happen
-            return;
-        }
-        // If file type is wrong display error message
-        if(!acceptedTypes.includes(file.type)) {
-            errorMessage.style.display = "block"; // Show error message if it was previously hidden
-            fakeButton.style.display = "block"; // Show button
-            previewIcon.style.display = "block"; // Show the icon
-            previewImage.style.display = "none"; // Hide the image
-            errorMessage.textContent = "Error: the type of file is not accepted";
-            return;
-        }
-        // If file too big display error message
-        if(file.size > MAX_FILE_SIZE_BYTES) {
-            errorMessage.style.display = "block"; // Show error message
-            fakeButton.style.display = "block"; // Show fake button
-            previewIcon.style.display = "block"; // Show the icon
-            previewImage.style.display = "none"; // Hide the image
-            errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB})`;
-            return;
-        }
-        // If all validations pass, update preview and hide all unnecessary elements
-        errorMessage.style.display = "none"; // Hide error message
-        fakeButton.style.display = "none"; // Hide button
-        previewIcon.style.display = "none"; // Hide the icon
-        previewImage.style.display = "block"; // Display the image
-        const reader = new FileReader();
-        reader.onload = function(element) {
-            previewImage.src = element.target.result;  // Display image preview
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// Display Modal Gallery
-function DisplayAdminGalleryPage(){
-    const actionButton = document.getElementById("gallery-button");
-    const submitButton = document.getElementById("submit-button");
-    const backButton = document.querySelector(".back-button");
-    const title = document.querySelector(".modal-title");
-    const modalWorkspace = document.querySelector(".modal-workspace");
-    try{
-        modalPageId = 1;
-        // Reset gallery
+        // fetch categories
+        const categoriesUrl = `${globalUrl}/categories`
+    
+        const modalWorkspace = document.querySelector(".modal-workspace");
+        modalWorkspace.classList.remove("modal-gallery");
+        // Reset modal workspace before populating
         modalWorkspace.innerHTML = "";
-        // Hide back arrow 
-        backButton.style.display = "none";
-        backButton.setAttribute("disabled", "true");
-        // Title
-        title.innerHTML = "Galerie photo";
-        // Generate Modal Gallery
-        GenerateAdminGalleryElements()
-            .then(() => {
-                // Add the event listeners on delete buttons
-                AddAdminDeleteEventListeners();
-            })
-            .catch(error => {
-                console.log(error);
-            });
-        // Action button
-        actionButton.style.display = "block";
-        actionButton.addEventListener("click", DisplayAdminUploadPage);
-        //Submit button
-        submitButton.style.display = "none";
+        // Instantiate
+        const data = await FetchData(categoriesUrl)
+        GenerateUploadFormElements(data);
     }
     catch(error){
         console.log(error);
@@ -703,7 +631,13 @@ function DisplayAdminUploadPage(){
         submitButton.classList.add("disabled");
         submitButton.disabled = true;
         // Display form
-        GenerateAdminUploadForm()
+        DisplayUploadForm()
+        .then(() => {
+            AddUploadGroupEventListener(); // Big button = input file
+            AddUploadImageListener(); // File preview logic
+            AddCheckFormListeners(); // Submit button enable or disable
+            AddSubmitFormListener(); // Form submission listener and button logic
+        })
         // Check form fields
         CheckFormFields();
     }
@@ -713,44 +647,35 @@ function DisplayAdminUploadPage(){
 
 }
 
-// Handle Modal Pages Logic
-function HandleModalPages(){
+// Check that data is present to enable submission button
+function CheckFormFields() {
     try{
-        if(modalPageId === 1){
-            DisplayAdminGalleryPage();
-        }
-        if(modalPageId === 2){
-            DisplayAdminUploadPage();
-        }
-    }
-    catch(error){
-        console.log(error);
-    }
- }
+    const textValue = document.getElementById("input-title").value.trim();
+    const selectValue = document.getElementById("select-category").value > 0;
+    const fileValue = document.getElementById("input-file").files.length > 0;
 
-// Handles display style of modal based on bool
-function DisplayModal(){
-    try{
-        const modalContainer = document.getElementById("modal1");
-        if(IsModalOpen) {
-            modalContainer.style.display = "none";
-            IsModalOpen = false;
-        }
-        else if(!IsModalOpen){
-            modalContainer.style.display = "flex";
-            IsModalOpen = true;
-            HandleModalPages();
-        }
+    const submitButton = document.getElementById("submit-button");
+
+    // Enable submit button only if all fields are filled and a file is selected
+    if (textValue && selectValue && fileValue) {
+        submitButton.classList.remove("disabled");
+        submitButton.disabled = false;
+    } 
+    else {
+        submitButton.classList.add("disabled");
+        submitButton.disabled = true;
+    }
     }
     catch(error){
-        console.log(error);
+        console.log("Error Check Form Fields:"+ error.lineNumber + error);
     }
+
 }
 
 // Function to send works with authorization
-//TODO Check for issues after submission
-function PostNewWork() {
+function SubmitNewWork(event) {
     try{
+        event.preventDefault();
         const sendWorkUrl = worksUrl;
         const token = sessionStorage.getItem("token");
 
@@ -782,7 +707,7 @@ function PostNewWork() {
             }
             if(response.ok){
                 console.log("Fichier téléversé avec succès!");
-                DisplayAdminGalleryPage(); // Reset Modal Page
+                DisplayAdminGalleryPage() // Reset Modal Page
                 FetchData(worksUrl)
                 .then(data =>{
                     GenerateFigureElements(data);
@@ -820,7 +745,7 @@ function DeleteWork(id){
         })
         .then(response =>{
             if(!response.ok){
-                console.error("Erreur lors de l'envoi de la requête")
+                console.error("Erreur lors de la suppression du fichier")
             }
             else{
                 DisplayAdminGalleryPage();
@@ -843,6 +768,79 @@ function DeleteWork(id){
     }
 }
 
+// Handles image input in upload form (aka Big button)
+function AddUploadGroupEventListener(){
+    try{
+        const uploadButton = document.getElementById("upload-group");
+        const fileInput = document.getElementById("input-file");
+        //Ensure there is only one event listener
+        uploadButton.removeEventListener("click", InputClick);
+        // Make the big button as if click on file input
+        uploadButton.addEventListener("click", InputClick);
+
+        function InputClick(){
+            fileInput.click()
+        }
+
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+// Handle Upload Image preview and file validation
+function AddUploadImageListener(){
+    const fileInput = document.getElementById("input-file");
+    fileInput.removeEventListener("change", DisplayUploadedImage); 
+    fileInput.addEventListener("change", DisplayUploadedImage); 
+        
+        function DisplayUploadedImage(event){
+        const file = event.target.files[0];
+        const fakeButton = document.getElementById("fake-button");
+        const errorMessage = document.getElementById("file-message");
+        const previewIcon = document.getElementById("preview-icon");
+        const previewImage = document.getElementById("preview-image");
+        // File validation
+        const MAX_FILE_SIZE_MB = 4;  // Maximum allowed file size (4 MB)
+        const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes for JS
+        const acceptedTypes = ["image/jpg", "image/jpeg", "image/png"]; // Should always be true based on input acceptance but handles error message display
+        
+        if(file === null ){
+            // Nothing should happen
+            return;
+        }
+        // If file type is wrong display error message
+        if(!acceptedTypes.includes(file.type)) {
+            errorMessage.style.display = "block"; // Show error message if it was previously hidden
+            fakeButton.style.display = "block"; // Show button
+            previewIcon.style.display = "block"; // Show the icon
+            previewImage.style.display = "none"; // Hide the image
+            errorMessage.textContent = "Error: the type of file is not accepted";
+            return;
+        }
+        // If file too big display error message
+        if(file.size > MAX_FILE_SIZE_BYTES) {
+            errorMessage.style.display = "block"; // Show error message
+            fakeButton.style.display = "block"; // Show fake button
+            previewIcon.style.display = "block"; // Show the icon
+            previewImage.style.display = "none"; // Hide the image
+            errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB})`;
+            return;
+        }
+        // If all validations pass, update preview and hide all unnecessary elements
+        errorMessage.style.display = "none"; // Hide error message
+        fakeButton.style.display = "none"; // Hide button
+        previewIcon.style.display = "none"; // Hide the icon
+        previewImage.style.display = "block"; // Display the image
+        const reader = new FileReader();
+        reader.onload = function(element) {
+            previewImage.src = element.target.result;  // Display image preview
+        };
+        reader.readAsDataURL(file);
+        }
+    
+}
+
 // Find and wire all the delete buttons in the modal to the DeleteWork function while passing the img id 
 function AddAdminDeleteEventListeners(){
     // Find img containers
@@ -859,28 +857,28 @@ function AddAdminDeleteEventListeners(){
     })
 }
 
-function AdminSubmitFormListeners(){
+function AddCheckFormListeners(){
     const inputFile = document.getElementById("input-file");
     const inputTitle = document.getElementById("input-title");
     const selectCategory = document.getElementById("select-category");
 
-    const submitButton = document.getElementById("submit-button");
+    // Ensure only one event listener is present
+    inputFile.removeEventListener("change", CheckFormFields);
+    inputTitle.removeEventListener("input", CheckFormFields);
+    selectCategory.removeEventListener("change", CheckFormFields);
 
     // Check for data and disable/enable the button accordingly
     inputFile.addEventListener("change", CheckFormFields);
     inputTitle.addEventListener("input", CheckFormFields);
     selectCategory.addEventListener("change", CheckFormFields);
-    
+}
+
+function AddSubmitFormListener(){
+    const submitButton = document.getElementById("submit-button");
+    // Ensure only one listener is present
+    submitButton.removeEventListener("click", SubmitNewWork);
     // Submit button listener
-    submitButton.addEventListener("click", (event) => {
-        try{
-            event.preventDefault();
-            PostNewWork();
-        }  
-        catch(error){
-            console.log(error);
-        }
-    })
+    submitButton.addEventListener("click", SubmitNewWork);
 }
 
 // Setup all admin buttons to open/close modal
@@ -896,31 +894,6 @@ function AddModalEventListeners(){
     }
 }
 
-// Check that data is present to enable submission button
-function CheckFormFields() {
-    try{
-    const textValue = document.getElementById("input-title").value.trim();
-    const selectValue = document.getElementById("select-category").value > 0;
-    const fileValue = document.getElementById("input-file").files.length > 0;
-
-    const submitButton = document.getElementById("submit-button");
-
-    // Enable submit button only if all fields are filled and a file is selected
-    if (textValue && selectValue && fileValue) {
-        submitButton.classList.remove("disabled");
-        submitButton.disabled = false;
-    } 
-    else {
-        submitButton.classList.add("disabled");
-        submitButton.disabled = true;
-    }
-    }
-    catch(error){
-        console.log("Error Check Form Fields:"+ error.lineNumber + error);
-    }
-
-}
-
 //** INITIALIZE **//
 async function Initialize(){
     try{
@@ -928,13 +901,11 @@ async function Initialize(){
         const worksUrl = `${globalUrl}/works`;
         const categoriesUrl = `${globalUrl}/categories`;
         
-        const worksData = await FetchData(worksUrl);
-        const categoriesData = await FetchData(categoriesUrl);
+        const works = await FetchData(worksUrl);
+        const categories = await FetchData(categoriesUrl);
 
         // Check for Admin status (logged in and token present in storage)
         CheckForAdmin();
-        //Start automatic logout if Admin or simply returns if not
-        StartLogoutTimer();
 
         // If Admin handle the main page modifications if not display default page and generate category filters
         if(IsAdmin){
@@ -947,11 +918,11 @@ async function Initialize(){
             const projetsNav = document.getElementById("projets-nav");
             projetsNav.classList.add("active");
             // Generate categories buttons
-            GenerateFilterButtons(categoriesData);
-            AddFilterButtonsEventListeners(categoriesData, worksData);
+            GenerateFilterButtons(categories);
+            AddFilterButtonsEventListeners(categories, works);
         }
         // Handle normal gallery behaviour regardless of Admin status
-        GenerateFigureElements(worksData);
+        GenerateFigureElements(works);
     }
     catch(error){
         console.error(error);
