@@ -221,6 +221,7 @@ function StartLogoutTimer() {
         return;
     }
     }
+
 // Check for Admin Status
 function CheckForAdmin(){
     try{
@@ -233,6 +234,7 @@ function CheckForAdmin(){
         console.log(error);
     }
 }
+
 // Handles main page changes like login/logout if Admin
 function HandleAdminChanges(){
     try{
@@ -259,6 +261,7 @@ function HandleAdminChanges(){
         console.log(error);
     }
 }
+
 // Handles generation of topbar and modify buttons
 function HandleEditionMode(){
     try{
@@ -298,6 +301,7 @@ function HandleEditionMode(){
         console.log(error);
     }
 }
+
 // Handle Logout Behaviour
 function HandleLogout(){
     IsAdmin = false;
@@ -372,7 +376,7 @@ function GenerateModal(){
             submitButton.classList.add("action-button");
             submitButton.setAttribute("id", "submit-button");
             submitButton.textContent = "Valider";
-            // Append everything
+            // Append inner container
             modalContainer.appendChild(modalTitle);
             modalContainer.appendChild(modalWorkSpace);
             modalContainer.appendChild(line);
@@ -543,8 +547,10 @@ function GenerateUploadFormElements(data){
         categoryInput.setAttribute("id", "select-category");
         categoryInput.setAttribute("type", "select");
         categoryInput.setAttribute("required", "true");
-        categoryInput.value = 0;
         // Options
+        //Default null
+        categoryInput.appendChild(document.createElement("option"));
+        // Categories
         data.forEach(category => {
             const categoryOption = document.createElement("option");
             categoryOption.value = category.id;
@@ -694,7 +700,7 @@ function DisplayAdminUploadPage(){
         actionButton.removeEventListener("click", DisplayAdminUploadPage); // Clear the event listener of the action button to be sure;
         // Submit button
         submitButton.style.display = "block";
-        submitButton.classList.add("disabled", "true");
+        submitButton.classList.add("disabled");
         submitButton.disabled = true;
         // Display form
         GenerateAdminUploadForm()
@@ -741,20 +747,8 @@ function DisplayModal(){
     }
 }
 
-// Setup all admin buttons to open/close modal
-function AddModalEventListeners(){
-    try{
-        const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
-        adminButtons.forEach(item => {
-           item.addEventListener("click", DisplayModal);
-        });
-    }       
-    catch(error){
-        console.log(error);
-    }
-}
-
 // Function to send works with authorization
+//TODO Check for issues after submission
 function PostNewWork() {
     try{
         const sendWorkUrl = worksUrl;
@@ -788,7 +782,7 @@ function PostNewWork() {
             }
             if(response.ok){
                 console.log("Fichier téléversé avec succès!");
-                DisplayAdminUploadPage(); // Reset Modal Page
+                DisplayAdminGalleryPage(); // Reset Modal Page
                 FetchData(worksUrl)
                 .then(data =>{
                     GenerateFigureElements(data);
@@ -889,8 +883,20 @@ function AdminSubmitFormListeners(){
     })
 }
 
+// Setup all admin buttons to open/close modal
+function AddModalEventListeners(){
+    try{
+        const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
+        adminButtons.forEach(item => {
+           item.addEventListener("click", DisplayModal);
+        });
+    }       
+    catch(error){
+        console.log(error);
+    }
+}
+
 // Check that data is present to enable submission button
-//TODO Still not working got to work on that
 function CheckFormFields() {
     try{
     const textValue = document.getElementById("input-title").value.trim();
@@ -898,11 +904,6 @@ function CheckFormFields() {
     const fileValue = document.getElementById("input-file").files.length > 0;
 
     const submitButton = document.getElementById("submit-button");
-
-    console.log(textValue);
-    console.log(selectValue);
-    console.log(fileValue);
-    console.log(submitButton);
 
     // Enable submit button only if all fields are filled and a file is selected
     if (textValue && selectValue && fileValue) {
