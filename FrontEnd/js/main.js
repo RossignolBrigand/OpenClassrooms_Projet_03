@@ -291,6 +291,8 @@ function GenerateModal(){
             modal.classList.add("modal");
             modal.setAttribute("id", "modal1");
             modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-hidden", "true");
+            modal.style.display = "none";
             // modal wrapper
             const modalWrapper = document.createElement("div"); 
             modalWrapper.classList.add("modal-wrapper");
@@ -349,7 +351,7 @@ function GenerateModal(){
             // Add EventListener on modal to close when outside wrapper or its children
             modal.addEventListener("click", (e) => {
                 if(!modalWrapper.contains(e.target)) {
-                    DisplayModal();
+                    CloseModal(e);
                 }
             }); 
     }
@@ -358,23 +360,43 @@ function GenerateModal(){
     }
 }
 
-// Handles display style of modal based on bool
-function DisplayModal(){
+// Handles display of modal based on bool
+function HandleModalDisplay(e){
     try{
-        const modal = document.getElementById("modal1");
         if(IsModalOpen) {
-            modal.removeAttribute("open");
-            IsModalOpen = false;
+            CloseModal(e)
         }
         else if(!IsModalOpen){
-            modal.setAttribute("open", "");
-            IsModalOpen = true;
-            HandleModalPages();
+            OpenModal(e)
         }
     }
     catch(error){
         console.log("Error while handling the display of modal: " + error);
     }
+}
+
+function OpenModal(e) {
+    e.preventDefault();
+    const modal = document.getElementById("modal1");
+    modal.removeAttribute("aria-hidden");
+    modal.setAttribute("aria-modal", "true");
+    modal.style.display = null;
+    IsModalOpen = true;
+    HandleModalPages();
+}
+
+function CloseModal(e) {
+    e.preventDefault();
+    const modal = document.getElementById("modal1");
+    // Set a timer to let the vanish animation happen
+    modal.setAttribute("aria-hidden", "true");
+    modal.removeAttribute("aria-modal");
+    const hideModal = function () {
+        modal.style.display = "none";
+        IsModalOpen = false;
+        modal.removeEventListener("animationend", hideModal);
+    }
+    modal.addEventListener("animationend", hideModal);
 }
 
 // Handle Modal pages generation logic (page 1 or page 2)
@@ -830,7 +852,7 @@ function AddUploadImageListener(){
             fakeButton.style.display = "block"; // Show fake button
             previewIcon.style.display = "block"; // Show the icon
             previewImage.style.display = "none"; // Hide the image
-            errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB})`;
+            errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB}mo)`;
             return;
         }
         // If all validations pass, update preview and hide all unnecessary elements
@@ -903,7 +925,7 @@ function AddModalEventListeners(){
     try{
         const adminButtons = Array.from(document.querySelectorAll("button.admin-modal, a.admin-modal"));
         adminButtons.forEach(item => {
-           item.addEventListener("click", DisplayModal);
+           item.addEventListener("click", HandleModalDisplay);
         });
     }       
     catch(error){
