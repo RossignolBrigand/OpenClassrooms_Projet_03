@@ -64,7 +64,7 @@ function GenerateFigureElements(data) {
         });
     }
     catch(error){
-        console.error(error);
+        console.error("Error  while generating gallery elements: " + error);
     }
 }
 
@@ -103,7 +103,7 @@ function GenerateFilterButtons(data) {
         })
     }
     catch(error){
-        console.error(error);
+        console.error("Error while trying to generate the gallery filter buttons: " + error);
     }
 }
 
@@ -127,7 +127,7 @@ function SortbyCategory(data, category) {
         return newSet;
     }
     catch(error){
-        console.error(error);
+        console.error("Error while trying to sort data by category: " + error);
     }
 }
 
@@ -181,7 +181,7 @@ function AddFilterButtonsEventListeners(categories, data) {
           }
     }
     catch(error){
-        console.error(error);
+        console.error("Error while handling filter buttons event listeners" + error);
     }
 }
 
@@ -193,13 +193,14 @@ function CheckForAdmin(){
         const token = sessionStorage.getItem("token");
         if(token != null){
             IsAdmin = true;
+            console.log("You are now logged in as an Administrator")
         }
         else{
-            throw new Error("Error: token credentials were not found!")
+            throw new Error("Token credentials were not found!")
         }
     }
     catch(error){
-        console.log(error);
+        console.log("Error while checking for admin: " + error);
     }
 }
 
@@ -226,7 +227,7 @@ function HandleAdminChanges(){
         }
     }
     catch(error){
-        console.log(error);
+        console.log("Error while handling home page admin changes: " + error);
     }
 }
 
@@ -266,7 +267,7 @@ function HandleEditionMode(){
         modalButton.prepend(modalIcon);
     }
     catch(error){
-        console.log(error);
+        console.log("Error while handling admin edition mode elements generation: " + error);
     }
 }
 
@@ -289,8 +290,6 @@ function GenerateModal(){
             const modal = document.createElement("aside"); 
             modal.classList.add("modal");
             modal.setAttribute("id", "modal1");
-            modal.setAttribute("style", "display:none");
-            modal.setAttribute("aria-hidden", "true");
             modal.setAttribute("role", "dialog");
             // modal wrapper
             const modalWrapper = document.createElement("div"); 
@@ -355,26 +354,26 @@ function GenerateModal(){
             }); 
     }
     catch(error){
-        console.log("Error generating Modal:" + error.stack);
+        console.log("Error while generating Modal: " + error);
     }
 }
 
 // Handles display style of modal based on bool
 function DisplayModal(){
     try{
-        const modalContainer = document.getElementById("modal1");
+        const modal = document.getElementById("modal1");
         if(IsModalOpen) {
-            modalContainer.style.display = "none";
+            modal.removeAttribute("open");
             IsModalOpen = false;
         }
         else if(!IsModalOpen){
-            modalContainer.style.display = "flex";
+            modal.setAttribute("open", "");
             IsModalOpen = true;
             HandleModalPages();
         }
     }
     catch(error){
-        console.log(error);
+        console.log("Error while handling the display of modal: " + error);
     }
 }
 
@@ -389,9 +388,10 @@ function HandleModalPages(){
         }
     }
     catch(error){
-        console.log(error);
+        console.log("Error while handling the choice of modal page: " + error);
     }
  }
+
 // Generate the modal admin gallery elements (photo + delete buttons)
 function GenerateAdminGalleryElements(){
     const globalUrl = "http://localhost:5678/api";
@@ -399,6 +399,7 @@ function GenerateAdminGalleryElements(){
     try{
         const modalGallery = document.querySelector(".modal-workspace");
         modalGallery.classList.add("modal-gallery");
+        modalGallery.classList.remove("modal-form");
         //Reset the gallery each time it is called
         modalGallery.innerHTML = "";
         return fetch(worksUrl)
@@ -429,7 +430,7 @@ function GenerateAdminGalleryElements(){
             })
         })
         .catch(error => {
-            console.log(error);
+            console.log("Error while genarating admin gallery elements: " + error);
         });
     }
     catch(error){
@@ -469,7 +470,7 @@ function DisplayAdminGalleryPage(){
         submitButton.style.display = "none";
     }
     catch(error){
-        console.log(error);
+        console.log("Error while trying to display admin gallery page: " + error);
     }
 }
 
@@ -477,6 +478,8 @@ function DisplayAdminGalleryPage(){
 function GenerateUploadFormElements(data){
         try{
         const modalWorkspace = document.querySelector(".modal-workspace");
+        modalWorkspace.classList.remove("modal-gallery");
+        modalWorkspace.classList.add("modal-form");
         //* Upload Field
         const uploadGroup = document.createElement("button");
         const uploadButton = document.createElement("button");
@@ -502,9 +505,6 @@ function GenerateUploadFormElements(data){
         uploadPreview.appendChild(uploadPreviewIcon);
         uploadPreview.appendChild(uploadPreviewImage);
         // Preview Icon
-        uploadPreviewIcon.style.height = "60px";
-        uploadPreviewIcon.style.fontSize = "24px";
-        uploadPreviewIcon.style.color = "#B9C5CC";
         uploadPreviewIcon.setAttribute("id", "preview-icon");
         uploadPreviewIcon.classList.add("fa-regular", "fa-image");
         // Preview Img
@@ -517,7 +517,7 @@ function GenerateUploadFormElements(data){
         uploadButton.textContent = "+ Ajouter photo";
         // Message
         uploadMsg.setAttribute("id", "file-message");
-        uploadMsg.innerHTML = "jpg, png: 4Mo max.";
+        uploadMsg.innerHTML = "jpg, png : 4mo max";
         // Append
         uploadGroup.appendChild(uploadInput);
         uploadGroup.appendChild(uploadPreview);
@@ -545,12 +545,14 @@ function GenerateUploadFormElements(data){
         titleGroup.appendChild(titleInput);
 
         //* Category
-        const categoryInput = document.createElement("select");
         const categoryLabel = document.createElement("label");
+        const categoryInput = document.createElement("select");
+        const chevronIcon = document.createElement("i");
         //Group
         const categoryGroup = document.createElement("div");
         categoryGroup.className = "form-group";
-        // Input field
+        categoryGroup.setAttribute("id", "category-group");
+        // Select field
         categoryInput.classList.add("form-input");
         categoryInput.setAttribute("name", "select-category");
         categoryInput.setAttribute("id", "select-category");
@@ -570,10 +572,13 @@ function GenerateUploadFormElements(data){
         categoryLabel.setAttribute("label", "Catégorie");
         categoryLabel.setAttribute("for", "select-category");
         categoryLabel.innerHTML = "Catégorie";
+        // Icon
+        chevronIcon.classList.add("fa-solid", "fa-chevron-down");
         //Append
         categoryGroup.appendChild(categoryLabel);
         categoryGroup.appendChild(categoryInput);
-
+        categoryGroup.appendChild(chevronIcon);
+      
         //* Form
         const uploadForm = document.createElement("form");
         uploadForm.setAttribute("id", "upload-form");
@@ -583,7 +588,7 @@ function GenerateUploadFormElements(data){
         modalWorkspace.appendChild(uploadForm);
         }
         catch(error){
-            console.log(error);
+            console.log("Error while generating admin upload form elements: " + error);
         }
 }
 
@@ -602,7 +607,7 @@ async function DisplayUploadForm(){
         GenerateUploadFormElements(data);
     }
     catch(error){
-        console.log(error);
+        console.log("Error while attempting to display admin upload form: " + error);
     }
 }
 
@@ -642,7 +647,7 @@ function DisplayAdminUploadPage(){
         CheckFormFields();
     }
     catch(error){
-        console.log(error);
+        console.log("Error while trying to display modal upload page: " + error);
     }
 
 }
@@ -667,7 +672,7 @@ function CheckFormFields() {
     }
     }
     catch(error){
-        console.log("Error Check Form Fields:"+ error.lineNumber + error);
+        console.log("Error while checking form fields: " + error);
     }
 
 }
@@ -684,7 +689,8 @@ function SubmitNewWork(event) {
         const inputCategory = document.getElementById("select-category");
 
         if(token === null){
-            throw new Error("Error while trying to retrieve authentication token ")
+            HandleLogout();
+            throw new Error("Error while trying to retrieve authentication token, you will be logged out")
         }
 
         // Create formData package
@@ -715,11 +721,11 @@ function SubmitNewWork(event) {
             }
         })
         .catch(error => {
-            console.error(error)
+            console.error("Error while trying to communicate with API: " + error)
         });
     }
     catch(error){
-        console.log(error);
+        console.log("Error while trying to post new element: " + error);
     }
 }
 
@@ -732,7 +738,7 @@ function DeleteWork(id){
         if(token === null){
             throw new Error("Error: ID token not found")
         }
-        const confirmation =  confirm("Voulez vous vraiment supprimer ce fichier ? (l'action est irréversible) " + "// id de l'objet: " + id);
+        const confirmation =  confirm("Voulez vous vraiment supprimer ce fichier ? (l'action est irréversible) ");
         if(!confirmation){
             return;
         }
@@ -745,7 +751,7 @@ function DeleteWork(id){
         })
         .then(response =>{
             if(!response.ok){
-                console.error("Erreur lors de la suppression du fichier")
+                console.error("Erreur lors de la communication avec l'API")
             }
             else{
                 DisplayAdminGalleryPage();
@@ -759,12 +765,12 @@ function DeleteWork(id){
             }
         })
         .catch(error => {
-            console.error("Une erreur s'est produite: ", error);
+            console.error("Une erreur s'est produite lors de la suppression du fichier: " + error);
         })
         }    
     }
     catch(error){
-        console.log(error);
+        console.log("Error while trying to remove selected file: " + error);
     }
 }
 
@@ -784,7 +790,7 @@ function AddUploadGroupEventListener(){
 
     }
     catch(error){
-        console.log(error);
+        console.log("Error while handling upload group listeners: " + error);
     }
 }
 
@@ -858,27 +864,38 @@ function AddAdminDeleteEventListeners(){
 }
 
 function AddCheckFormListeners(){
-    const inputFile = document.getElementById("input-file");
-    const inputTitle = document.getElementById("input-title");
-    const selectCategory = document.getElementById("select-category");
-
-    // Ensure only one event listener is present
-    inputFile.removeEventListener("change", CheckFormFields);
-    inputTitle.removeEventListener("input", CheckFormFields);
-    selectCategory.removeEventListener("change", CheckFormFields);
-
-    // Check for data and disable/enable the button accordingly
-    inputFile.addEventListener("change", CheckFormFields);
-    inputTitle.addEventListener("input", CheckFormFields);
-    selectCategory.addEventListener("change", CheckFormFields);
+    try{
+        const inputFile = document.getElementById("input-file");
+        const inputTitle = document.getElementById("input-title");
+        const selectCategory = document.getElementById("select-category");
+    
+        // Ensure only one event listener is present
+        inputFile.removeEventListener("change", CheckFormFields);
+        inputTitle.removeEventListener("input", CheckFormFields);
+        selectCategory.removeEventListener("change", CheckFormFields);
+    
+        // Check for data and disable/enable the button accordingly
+        inputFile.addEventListener("change", CheckFormFields);
+        inputTitle.addEventListener("input", CheckFormFields);
+        selectCategory.addEventListener("change", CheckFormFields);
+    }
+    catch(error){
+        console.log("Error while handling form fields listeners: " + error);
+    }
 }
 
 function AddSubmitFormListener(){
-    const submitButton = document.getElementById("submit-button");
-    // Ensure only one listener is present
-    submitButton.removeEventListener("click", SubmitNewWork);
-    // Submit button listener
-    submitButton.addEventListener("click", SubmitNewWork);
+    try{
+        const submitButton = document.getElementById("submit-button");
+        // Ensure only one listener is present
+        submitButton.removeEventListener("click", SubmitNewWork);
+        // Submit button listener
+        submitButton.addEventListener("click", SubmitNewWork);
+    }
+    catch(error){
+        console.log("Error while handling admin submit form listener: " + error);
+    }
+
 }
 
 // Setup all admin buttons to open/close modal
@@ -890,7 +907,7 @@ function AddModalEventListeners(){
         });
     }       
     catch(error){
-        console.log(error);
+        console.log("Error while handling modal event listeners: " + error);
     }
 }
 
@@ -931,5 +948,3 @@ async function Initialize(){
 
 //! Start
 Initialize();
-// Test
-console.log("end of main program");
