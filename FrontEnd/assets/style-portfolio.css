@@ -52,6 +52,7 @@
 .title-div a {
 	position: absolute;
   	right: 370px;
+	color: inherit;
 }
 
 .gallery {

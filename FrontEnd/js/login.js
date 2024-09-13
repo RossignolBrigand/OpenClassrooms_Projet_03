@@ -85,5 +85,4 @@ function Initialize() {
 }
 
 //! Start
-Initialize()
-console.log("End of program: Login");
+Initialize();
