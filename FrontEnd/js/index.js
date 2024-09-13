@@ -31,7 +31,7 @@ async function FetchData(url) {
     }
 }
 
-//****** GALLERY *******/
+//#region GALLERY
 
 // Generates the home page gallery based on data input (API/works || newSet)
 function GenerateFigureElements(data) {
@@ -184,8 +184,8 @@ function AddFilterButtonsEventListeners(categories, data) {
         console.error("Error while handling filter buttons event listeners" + error);
     }
 }
-
-//****** ADMIN-MODE *******/
+//#endregion
+//#region ADMIN-MODE
 
 // Check for Admin Status
 function CheckForAdmin(){
@@ -279,8 +279,8 @@ function HandleLogout(){
     //Reset page
     location.reload();
 }
-
-//****** MODAL ******//
+//#endregion
+//#region MODAL
 
 // Generate all the necessary html elements of the modal 
 // except for the gallery element and the form to upload photos
@@ -412,7 +412,43 @@ function HandleModalPages(){
     catch(error){
         console.log("Error while handling the choice of modal page: " + error);
     }
- }
+}
+
+// Display Modal Gallery
+function DisplayAdminGalleryPage(){
+    const actionButton = document.getElementById("gallery-button");
+    const submitButton = document.getElementById("submit-button");
+    const backButton = document.querySelector(".back-button");
+    const title = document.querySelector(".modal-title");
+    const modalWorkspace = document.querySelector(".modal-workspace");
+    try{
+        modalPageId = 1;
+        // Reset gallery
+        modalWorkspace.innerHTML = "";
+        // Hide back arrow 
+        backButton.style.display = "none";
+        backButton.setAttribute("disabled", "true");
+        // Title
+        title.innerHTML = "Galerie photo";
+        // Generate Modal Gallery
+        GenerateAdminGalleryElements()
+            .then(() => {
+                // Add the event listeners on delete buttons
+                AddAdminDeleteEventListeners();
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        // Action button
+        actionButton.style.display = "block";
+        actionButton.addEventListener("click", DisplayAdminUploadPage);
+        //Submit button
+        submitButton.style.display = "none";
+    }
+    catch(error){
+        console.log("Error while trying to display admin gallery page: " + error);
+    }
+}
 
 // Generate the modal admin gallery elements (photo + delete buttons)
 function GenerateAdminGalleryElements(){
@@ -460,39 +496,79 @@ function GenerateAdminGalleryElements(){
     }
 }
 
-// Display Modal Gallery
-function DisplayAdminGalleryPage(){
+// Find and wire all the delete buttons in the modal to the DeleteWork function while passing the img id 
+function AddAdminDeleteEventListeners(){
+    // Find img containers
+    const imgContainers = document.querySelectorAll(".img-container");
+    // Get the button within each container
+    imgContainers.forEach(function(container){
+        const button = container.querySelector(".delete-button");
+        // for each button find the img within parent container and call the DeleteWork function passing the image id as a parameter 
+        button.onclick = function() {
+            const img = container.querySelector(".modal-img");
+            const id = img.id;
+            DeleteWork(id);
+        }
+    })
+}
+
+// Display Modal UploadForm
+function DisplayAdminUploadPage(){
     const actionButton = document.getElementById("gallery-button");
     const submitButton = document.getElementById("submit-button");
     const backButton = document.querySelector(".back-button");
     const title = document.querySelector(".modal-title");
     const modalWorkspace = document.querySelector(".modal-workspace");
     try{
-        modalPageId = 1;
-        // Reset gallery
+        modalPageId = 2;
+        // reset modalWorkspace before populating
         modalWorkspace.innerHTML = "";
-        // Hide back arrow 
-        backButton.style.display = "none";
-        backButton.setAttribute("disabled", "true");
+        // Show back arrow
+        backButton.style.display = "flex";
+        backButton.removeAttribute("disabled");
+        backButton.addEventListener("click", DisplayAdminGalleryPage);
         // Title
-        title.innerHTML = "Galerie photo";
-        // Generate Modal Gallery
-        GenerateAdminGalleryElements()
-            .then(() => {
-                // Add the event listeners on delete buttons
-                AddAdminDeleteEventListeners();
-            })
-            .catch(error => {
-                console.log(error);
-            });
-        // Action button
-        actionButton.style.display = "block";
-        actionButton.addEventListener("click", DisplayAdminUploadPage);
-        //Submit button
-        submitButton.style.display = "none";
+        title.innerHTML = "Ajout photo";
+        // Action button 
+        actionButton.style.display = "none";
+        actionButton.removeEventListener("click", DisplayAdminUploadPage); // Clear the event listener of the action button to be sure;
+        // Submit button
+        submitButton.style.display = "block";
+        submitButton.classList.add("disabled");
+        submitButton.disabled = true;
+        // Display form
+        DisplayUploadForm()
+        .then(() => {
+            AddUploadGroupEventListener(); // Big button = input file
+            AddUploadImageListener(); // File preview logic
+            AddCheckFormListeners(); // Submit button enable or disable
+            AddSubmitFormListener(); // Form submission listener and button logic
+        })
+        // Check form fields
+        CheckFormFields();
     }
     catch(error){
-        console.log("Error while trying to display admin gallery page: " + error);
+        console.log("Error while trying to display modal upload page: " + error);
+    }
+
+}
+
+// Call the admin upload form elements generation and handle form data and submission logic 
+async function DisplayUploadForm(){
+    try{
+        // fetch categories
+        const categoriesUrl = `${globalUrl}/categories`
+    
+        const modalWorkspace = document.querySelector(".modal-workspace");
+        modalWorkspace.classList.remove("modal-gallery");
+        // Reset modal workspace before populating
+        modalWorkspace.innerHTML = "";
+        // Instantiate
+        const data = await FetchData(categoriesUrl)
+        GenerateUploadFormElements(data);
+    }
+    catch(error){
+        console.log("Error while attempting to display admin upload form: " + error);
     }
 }
 
@@ -612,66 +688,6 @@ function GenerateUploadFormElements(data){
         catch(error){
             console.log("Error while generating admin upload form elements: " + error);
         }
-}
-
-// Call the admin upload form elements generation and handle form data and submission logic 
-async function DisplayUploadForm(){
-    try{
-        // fetch categories
-        const categoriesUrl = `${globalUrl}/categories`
-    
-        const modalWorkspace = document.querySelector(".modal-workspace");
-        modalWorkspace.classList.remove("modal-gallery");
-        // Reset modal workspace before populating
-        modalWorkspace.innerHTML = "";
-        // Instantiate
-        const data = await FetchData(categoriesUrl)
-        GenerateUploadFormElements(data);
-    }
-    catch(error){
-        console.log("Error while attempting to display admin upload form: " + error);
-    }
-}
-
-// Display Modal UploadForm
-function DisplayAdminUploadPage(){
-    const actionButton = document.getElementById("gallery-button");
-    const submitButton = document.getElementById("submit-button");
-    const backButton = document.querySelector(".back-button");
-    const title = document.querySelector(".modal-title");
-    const modalWorkspace = document.querySelector(".modal-workspace");
-    try{
-        modalPageId = 2;
-        // reset modalWorkspace before populating
-        modalWorkspace.innerHTML = "";
-        // Show back arrow
-        backButton.style.display = "flex";
-        backButton.removeAttribute("disabled");
-        backButton.addEventListener("click", DisplayAdminGalleryPage);
-        // Title
-        title.innerHTML = "Ajout photo";
-        // Action button 
-        actionButton.style.display = "none";
-        actionButton.removeEventListener("click", DisplayAdminUploadPage); // Clear the event listener of the action button to be sure;
-        // Submit button
-        submitButton.style.display = "block";
-        submitButton.classList.add("disabled");
-        submitButton.disabled = true;
-        // Display form
-        DisplayUploadForm()
-        .then(() => {
-            AddUploadGroupEventListener(); // Big button = input file
-            AddUploadImageListener(); // File preview logic
-            AddCheckFormListeners(); // Submit button enable or disable
-            AddSubmitFormListener(); // Form submission listener and button logic
-        })
-        // Check form fields
-        CheckFormFields();
-    }
-    catch(error){
-        console.log("Error while trying to display modal upload page: " + error);
-    }
-
 }
 
 // Check that data is present to enable submission button
@@ -869,22 +885,6 @@ function AddUploadImageListener(){
     
 }
 
-// Find and wire all the delete buttons in the modal to the DeleteWork function while passing the img id 
-function AddAdminDeleteEventListeners(){
-    // Find img containers
-    const imgContainers = document.querySelectorAll(".img-container");
-    // Get the button within each container
-    imgContainers.forEach(function(container){
-        const button = container.querySelector(".delete-button");
-        // for each button find the img within parent container and call the DeleteWork function passing the image id as a parameter 
-        button.onclick = function() {
-            const img = container.querySelector(".modal-img");
-            const id = img.id;
-            DeleteWork(id);
-        }
-    })
-}
-
 function AddCheckFormListeners(){
     try{
         const inputFile = document.getElementById("input-file");
@@ -932,6 +932,8 @@ function AddModalEventListeners(){
         console.log("Error while handling modal event listeners: " + error);
     }
 }
+
+//#endregion
 
 //** INITIALIZE **//
 async function Initialize(){

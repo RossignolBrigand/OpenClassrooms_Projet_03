@@ -1,6 +1,3 @@
-//TODO: Build logic to extract data from form and send Post request to API; Return the value from said request and store it into localStorage. 
-//TODO: 
-
 //* Properties
 
 const globalUrl = "http://localhost:5678/api"
