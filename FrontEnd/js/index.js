@@ -184,7 +184,9 @@ function AddFilterButtonsEventListeners(categories, data) {
         console.error("Error while handling filter buttons event listeners" + error);
     }
 }
+
 //#endregion
+
 //#region ADMIN-MODE
 
 // Check for Admin Status
@@ -279,7 +281,9 @@ function HandleLogout(){
     //Reset page
     location.reload();
 }
+
 //#endregion
+
 //#region MODAL
 
 // Generate all the necessary html elements of the modal 
@@ -860,6 +864,7 @@ function AddUploadImageListener(){
             previewIcon.style.display = "block"; // Show the icon
             previewImage.style.display = "none"; // Hide the image
             errorMessage.textContent = "Error: the type of file is not accepted";
+            errorMessage.style.color = "#c51010";
             return;
         }
         // If file too big display error message
@@ -869,10 +874,12 @@ function AddUploadImageListener(){
             previewIcon.style.display = "block"; // Show the icon
             previewImage.style.display = "none"; // Hide the image
             errorMessage.textContent = `Error: the file size exceeds the limits (Maximum size: ${MAX_FILE_SIZE_MB}mo)`;
+            errorMessage.style.color = "#c51010";
             return;
         }
         // If all validations pass, update preview and hide all unnecessary elements
         errorMessage.style.display = "none"; // Hide error message
+        errorMessage.style.color = "inherit"; // Reset color of message 
         fakeButton.style.display = "none"; // Hide button
         previewIcon.style.display = "none"; // Hide the icon
         previewImage.style.display = "block"; // Display the image
