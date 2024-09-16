@@ -961,7 +961,7 @@ async function Initialize(){
             GenerateModal();
             AddModalEventListeners();
         }
-        if (!IsAdmin){
+        if(!IsAdmin){
             // Change projets' class
             const projetsNav = document.getElementById("projets-nav");
             projetsNav.classList.add("active");
