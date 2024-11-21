@@ -107,7 +107,7 @@ function GenerateFilterButtons(data) {
     }
 }
 
-// Generates a set from the 
+// Generates a set from the works data filtered by the categories fetched from the API
 function SortbyCategory(data, category) {
     try{
         // Error management
