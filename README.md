@@ -16,7 +16,7 @@ Ce projet consiste en la création d'un site web dynamique en utilisant JavaScri
 
 1. Clonez le dépôt sur votre machine locale en utilisant la commande suivante :
     ```bash
-    git clone https://github.com/votre-utilisateur/OpenClassrooms_Projet_03.git
+    git clone https://github.com/rossignolbrigand/OpenClassrooms_Projet_03.git
     ```
 2. Accédez au répertoire du projet :
     ```bash
